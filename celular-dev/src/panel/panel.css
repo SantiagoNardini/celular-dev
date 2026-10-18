@@ -112,6 +112,10 @@ details li { margin-bottom: 4px; }
 /* dónde tocaste: un círculo que se agranda y se va */
 .toque { position: absolute; width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%; background: rgba(255, 255, 255, .45); border: 1.5px solid rgba(0, 0, 0, .35); pointer-events: none; animation: toque .45s ease-out forwards; z-index: 3; }
 @keyframes toque { from { transform: scale(.5); opacity: 1; } to { transform: scale(1.4); opacity: 0; } }
+/* un botón apretado, mientras el celular contesta */
+button.ocupado { cursor: progress; opacity: .6; }
+button.ocupado svg.ic { animation: girar .8s linear infinite; }
+@keyframes girar { to { transform: rotate(360deg); } }
 .controles-espejo { display: flex; justify-content: center; gap: 6px; margin-top: 14px; }
 .controles-espejo button { width: 40px; height: 40px; padding: 0; justify-content: center; border-radius: 50%; }
 .estado-espejo { display: flex; justify-content: center; align-items: center; gap: 7px; color: var(--texto-3); font-size: 12px; margin-top: 10px; }

@@ -228,6 +228,35 @@ test('el espejo: pide cuadros solo mientras alguien mira, los manda al panel y l
   await p.terminado;
 });
 
+test('el espejo pide imágenes del ancho en que se muestran, y cambia si otro panel las quiere más grandes', async () => {
+  const p = armar({ opciones: { carpeta: carpetaSitio } });
+  await arrancarHastaCorrer(p);
+  const mirar = async ancho => {
+    const pedido = request(`${PANEL}/api/espejo.mjpg${ancho ? `?ancho=${ancho}` : ''}`, { headers: { Host: `localhost:${process.env.CELULAR_PUERTO_PANEL}` } });
+    return new Promise((resolver, rechazar) => { pedido.on('response', resolver); pedido.on('error', rechazar); pedido.end(); });
+  };
+  const chico = await mirar(400);
+  await hasta(() => p.chrome.pedidosEspejo?.length === 1);
+  assert.equal(p.chrome.pedidosEspejo[0].ancho, 400);
+  // otro panel, en una pantalla con más resolución: se pide más grande para los dos
+  const grande = await mirar(2000);
+  await hasta(() => p.chrome.pedidosEspejo.length === 2);
+  assert.equal(p.chrome.pedidosEspejo[1].ancho, 720, 'no tiene que pasar de 720');
+  // se cierra el grande: vuelve al tamaño del que queda
+  grande.destroy();
+  await hasta(() => p.chrome.pedidosEspejo.length === 3);
+  assert.equal(p.chrome.pedidosEspejo[2].ancho, 400);
+  chico.destroy();
+  await hasta(() => !p.chrome.espejo);
+  // sin dato de ancho: 540
+  const sinDato = await mirar();
+  await hasta(() => p.chrome.pedidosEspejo.length === 4);
+  assert.equal(p.chrome.pedidosEspejo[3].ancho, 540);
+  sinDato.destroy();
+  await p.app.salir(0);
+  await p.terminado;
+});
+
 test('sin opciones: el panel ofrece la carpeta usada antes, y se elige desde ahí', async () => {
   const p = armar();
   p.app.arrancar();

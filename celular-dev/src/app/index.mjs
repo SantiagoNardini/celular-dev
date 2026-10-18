@@ -162,7 +162,7 @@ async function salir(app, codigo) {
   for (const reloj of Object.values(app.relojes)) clearInterval(reloj);
   if (app.dejarDeVigilar) app.dejarDeVigilar();
   if (app.alElegirSitio) app.alElegirSitio(null);
-  for (const c of app.espejo.clientes) c.end();
+  for (const c of app.espejo.clientes.keys()) c.end();
   if (app.chrome) app.chrome.cerrar();
   if (adb) {
     adb.cerrar();

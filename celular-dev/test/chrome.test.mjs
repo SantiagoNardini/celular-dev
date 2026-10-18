@@ -15,9 +15,7 @@ test('un cuadro del espejo: la imagen, y el tamaño de la página sin la barra d
   assert.deepEqual(cuadros[0].datos, jpeg);
   assert.equal(cuadros[0].ancho, 411.43);
   assert.ok(Math.abs(cuadros[0].alto - 773.14) < 0.01);
-  // avisa que llegó un rato después (así Chrome no manda más de unos 12 por segundo)
-  assert.equal(enviados.length, 0);
-  await new Promise(r => setTimeout(r, 120));
+  // avisa enseguida que llegó: así el próximo cambio sale sin esperar
   assert.deepEqual(enviados, [['Page.screencastFrameAck', { sessionId: 7 }]]);
 });
 
@@ -31,18 +29,20 @@ test('los cuadros no se mezclan con los eventos de la consola', () => {
   assert.deepEqual(eventos, ['Runtime.consoleAPICalled']);
 });
 
-test('los cuadros seguidos se piden a unos 30 por segundo como mucho', async () => {
+test('cada cuadro se avisa enseguida, aunque lleguen seguidos', () => {
   const chrome = new Chrome(0);
   const avisos = [];
-  chrome.enviar = async (metodo, params) => { if (metodo === 'Page.screencastFrameAck') avisos.push([params.sessionId, Date.now()]); };
-  const cuadro = n => chrome.recibir({ method: 'Page.screencastFrame', params: { data: '', sessionId: n, metadata: { deviceWidth: 1, deviceHeight: 1 } } });
-  const inicio = Date.now();
-  cuadro(1); cuadro(2); cuadro(3);
-  await new Promise(r => setTimeout(r, 150));
-  assert.deepEqual(avisos.map(a => a[0]), [1, 2, 3]);
-  // el primero enseguida; los otros, separados unos 33 ms
-  assert.ok(avisos[0][1] - inicio < 25, 'el primero tardó');
-  assert.ok(avisos[2][1] - inicio >= 60, 'no esperó entre cuadros');
+  chrome.enviar = async (metodo, params) => { if (metodo === 'Page.screencastFrameAck') avisos.push(params.sessionId); };
+  for (const n of [1, 2, 3]) chrome.recibir({ method: 'Page.screencastFrame', params: { data: '', sessionId: n, metadata: { deviceWidth: 1, deviceHeight: 1 } } });
+  assert.deepEqual(avisos, [1, 2, 3]);
+});
+
+test('la captura pide el PNG rápido', async () => {
+  const chrome = new Chrome(0);
+  let pedido;
+  chrome.enviar = async (metodo, params) => { pedido = [metodo, params]; return { data: Buffer.from('png').toString('base64') }; };
+  assert.equal((await chrome.captura()).toString(), 'png');
+  assert.deepEqual(pedido, ['Page.captureScreenshot', { format: 'png', optimizeForSpeed: true }]);
 });
 
 test('un toque lleva la hora en segundos, como la pide Chrome', async () => {

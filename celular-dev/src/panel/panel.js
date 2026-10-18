@@ -51,7 +51,9 @@ function avisar(texto, mal = false) {
 
 const pedir = (accion, valor) => fetch('/api/accion', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Celular': '1' }, body: JSON.stringify({ accion, valor }) });
 
-async function accion(nombre, valor) {
+async function accion(nombre, valor, boton) {
+  // el botón se marca enseguida, aunque el celular tarde en contestar
+  if (boton) boton.classList.add('ocupado');
   try {
     const datos = await (await pedir(nombre, valor)).json();
     if (nombre === 'salir') {
@@ -69,12 +71,14 @@ async function accion(nombre, valor) {
     } else if (datos.mensaje) avisar(datos.mensaje);
   } catch {
     avisar(tr('toast.sinConexion'), true);
+  } finally {
+    if (boton) boton.classList.remove('ocupado');
   }
 }
 
 document.addEventListener('click', e => {
   const boton = e.target.closest('[data-accion]');
-  if (boton) accion(boton.dataset.accion, boton.dataset.valor);
+  if (boton && !boton.classList.contains('ocupado')) accion(boton.dataset.accion, boton.dataset.valor, boton);
 });
 document.addEventListener('toggle', e => { if (e.target.id === 'ayuda') ayudaAbierta = e.target.open; }, true);
 
@@ -308,12 +312,27 @@ function actualizarEspejo() {
   if (!imagen) return;
   const quiere = !cerrado && estado && estado.fase === 'corriendo' && estado.consola && document.visibilityState === 'visible';
   if (quiere && !imagen.dataset.conectada) {
+    const ancho = anchoEnPantalla(imagen);
     imagen.dataset.conectada = '1';
-    imagen.src = `/api/espejo.mjpg?${Date.now()}`;
+    imagen.dataset.ancho = ancho;
+    imagen.src = `/api/espejo.mjpg?ancho=${ancho}&${Date.now()}`;
   } else if (!quiere && imagen.dataset.conectada) {
     soltarEspejo();
   }
 }
+
+// cuántos píxeles de verdad mide el celular en esta pantalla (con la escala de Windows o una Retina, más)
+const anchoEnPantalla = imagen => Math.round((imagen.parentElement.clientWidth || 380) * (window.devicePixelRatio || 1));
+// si la ventana cambia mucho de tamaño (o pasa a otro monitor), se piden imágenes del tamaño nuevo
+let relojTamano = null;
+window.addEventListener('resize', () => {
+  clearTimeout(relojTamano);
+  relojTamano = setTimeout(() => {
+    const imagen = document.getElementById('espejo');
+    if (!imagen || !imagen.dataset.conectada) return;
+    if (Math.abs(anchoEnPantalla(imagen) - +imagen.dataset.ancho) > 60) { soltarEspejo(); actualizarEspejo(); }
+  }, 400);
+});
 
 function soltarEspejo() {
   const imagen = document.getElementById('espejo');

@@ -9,7 +9,8 @@ import { cambio } from './estado.mjs';
 const LIMITE = '--cuadro';
 
 export function espejoInicial() {
-  return { clientes: new Set(), activo: false, ultimo: null, ancho: 0, alto: 0 };
+  // clientes: cada panel que mira, con el ancho (en píxeles de su pantalla) en que muestra el celular
+  return { clientes: new Map(), activo: false, pedido: 0, ultimo: null, ancho: 0, alto: 0 };
 }
 
 function escribirCuadro(respuesta, jpeg) {
@@ -19,25 +20,38 @@ function escribirCuadro(respuesta, jpeg) {
   respuesta.write(`\r\n${LIMITE}\r\n`);
 }
 
-// Un panel empieza a mirar (GET /api/espejo.mjpg).
+// Las imágenes se piden del ancho en que se muestran: más grandes no se ven mejor y tardan más (el
+// celular las achica y las comprime). En un moto g24: 720 px, unos 108 ms del cambio a la imagen; 540 px,
+// 86 ms; 360 px, 58 ms. Entre 320 y 720 px; sin dato, 540.
+export const anchoPedido = url => {
+  const n = parseInt(new URL(url, 'http://x').searchParams.get('ancho'), 10);
+  return Number.isFinite(n) ? Math.min(Math.max(n, 320), 720) : 540;
+};
+const anchoDeseado = espejo => Math.max(...espejo.clientes.values());
+
+// Un panel empieza a mirar (GET /api/espejo.mjpg?ancho=...).
 export function mirarEspejo(app, pedido, respuesta) {
   respuesta.writeHead(200, { 'Content-Type': `multipart/x-mixed-replace; boundary=${LIMITE.slice(2)}`, 'Cache-Control': 'no-store', Connection: 'keep-alive' });
   respuesta.write(`${LIMITE}\r\n`);
-  app.espejo.clientes.add(respuesta);
+  app.espejo.clientes.set(respuesta, anchoPedido(pedido.url));
   if (app.espejo.ultimo) escribirCuadro(respuesta, app.espejo.ultimo);
   pedido.on('close', () => {
     app.espejo.clientes.delete(respuesta);
     if (!app.espejo.clientes.size) detenerEspejo(app);
+    else if (anchoDeseado(app.espejo) !== app.espejo.pedido) reanudarEspejo(app);
   });
-  iniciarEspejo(app);
+  // si ya andaba con otro tamaño, se vuelve a pedir con el nuevo
+  if (app.espejo.activo && anchoDeseado(app.espejo) !== app.espejo.pedido) reanudarEspejo(app);
+  else iniciarEspejo(app);
 }
 
 async function iniciarEspejo(app) {
   const { espejo, chrome } = app;
   if (espejo.activo || !espejo.clientes.size || !chrome || !chrome.conectado) return;
   espejo.activo = true;
+  espejo.pedido = anchoDeseado(espejo);
   try {
-    await chrome.iniciarEspejo();
+    await chrome.iniciarEspejo({ ancho: espejo.pedido, alto: Math.round(espejo.pedido * 2.25) });
   } catch (error) {
     espejo.activo = false;
     app.ui.anotar('INFO', `Espejo: ${error.message}`);
@@ -64,7 +78,7 @@ export function alCuadro(app, { datos, ancho, alto }) {
   espejo.ultimo = datos;
   espejo.ancho = ancho;
   espejo.alto = alto;
-  for (const c of espejo.clientes) escribirCuadro(c, datos);
+  for (const c of espejo.clientes.keys()) escribirCuadro(c, datos);
   if (!estado.espejo) { estado.espejo = true; cambio(app); }
 }
 

@@ -112,17 +112,17 @@ export class Chrome extends EventEmitter {
   }
 
   async captura() {
-    const r = await this.enviar('Page.captureScreenshot', { format: 'png' }, 20000);
+    // optimizeForSpeed: comprime menos (sigue sin perder calidad) y tarda un 30 % menos
+    const r = await this.enviar('Page.captureScreenshot', { format: 'png', optimizeForSpeed: true }, 20000);
     return Buffer.from(r.data, 'base64');
   }
 
   // ---------- Espejo: la pantalla en vivo y tocarla desde la PC ----------
 
-  // Chrome manda un cuadro y no manda el siguiente hasta que se le avisa que llegó. Se avisa enseguida,
-  // pero sin pasar de unos 30 por segundo: fluido para usarlo, sin recalentar el celular.
-  // 720 px de ancho alcanza para la pantalla de casi cualquier celular, sin escalar (menos trabajo).
-  iniciarEspejo({ ancho = 720, alto = 1600, calidad = 60 } = {}) {
-    this.ultimoCuadro = 0;
+  // Chrome manda un cuadro y no manda el siguiente hasta que se le avisa que llegó. Se avisa enseguida:
+  // así la imagen que muestra el resultado de un toque sale apenas está. El celular mismo pone el
+  // límite (unos 25 por segundo en un moto g24), y sin cambios en la pantalla no manda nada.
+  iniciarEspejo({ ancho = 540, alto = 1215, calidad = 60 } = {}) {
     return this.enviar('Page.startScreencast', { format: 'jpeg', quality: calidad, maxWidth: ancho, maxHeight: alto, everyNthFrame: 1 });
   }
 
@@ -131,10 +131,7 @@ export class Chrome extends EventEmitter {
   }
 
   alCuadro({ data, metadata, sessionId }) {
-    const ahora = Date.now();
-    const falta = Math.max(0, 33 - (ahora - (this.ultimoCuadro || 0)));
-    this.ultimoCuadro = ahora + falta;
-    setTimeout(() => this.enviar('Page.screencastFrameAck', { sessionId }).catch(() => {}), falta);
+    this.enviar('Page.screencastFrameAck', { sessionId }).catch(() => {});
     // el cuadro es solo la página: el alto que informa Chrome incluye su barra de arriba (offsetTop)
     this.emit('cuadro', { datos: Buffer.from(data, 'base64'), ancho: metadata.deviceWidth, alto: metadata.deviceHeight - (metadata.offsetTop || 0) });
   }
