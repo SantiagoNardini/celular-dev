@@ -5,8 +5,17 @@
 // Solo se piden cuadros mientras haya un panel mirando: con el panel cerrado o en otra pestaña, el celular
 // no trabaja de más.
 import { cambio } from './estado.mjs';
+import { guardarPreferencia } from '../lugares.mjs';
 
 const LIMITE = '--cuadro';
+
+// La primera vez que toca el espejo, el aviso de bienvenida se va y no vuelve a salir.
+export function marcarPrimerExito(app) {
+  if (!app.estado.primerExito) return;
+  app.estado.primerExito = false;
+  guardarPreferencia('primerExito', true);
+  cambio(app);
+}
 
 export function espejoInicial() {
   // clientes: cada panel que mira, con el ancho (en píxeles de su pantalla) en que muestra el celular
@@ -127,6 +136,7 @@ export async function tocar(app, valor) {
   if (!chrome || !chrome.conectado || !espejo.ancho || !valor || typeof valor !== 'object') return {};
   const x = Math.round(Math.min(Math.max(+valor.x || 0, 0), 1) * espejo.ancho);
   const y = Math.round(Math.min(Math.max(+valor.y || 0, 0), 1) * espejo.alto);
+  if (valor.tipo === 'inicio') marcarPrimerExito(app);
   // No se espera a que el celular conteste: así el panel manda el siguiente movimiento enseguida. Van
   // todos por la misma conexión con Chrome, así que llegan en orden.
   const momento = Number.isFinite(+valor.t) && +valor.t > 0 ? +valor.t : 0;

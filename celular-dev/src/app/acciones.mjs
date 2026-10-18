@@ -12,7 +12,7 @@ import { abrirChromeInspect } from '../sistema.mjs';
 import { REDES, nombreRed, cambio, contar } from './estado.mjs';
 import { abrirEnCelular, conectarConsola, llevarSitioAlCelular } from './conexion.mjs';
 import { sitioDeServidor, sitioDeCarpeta, vigilarCodigo, elegirEnPanel, aplicarSitio, elegir } from './sitio.mjs';
-import { tocar } from './espejo.mjs';
+import { tocar, marcarPrimerExito } from './espejo.mjs';
 
 const sello = (ui, d) => `${ui.fecha(d)}_${ui.hora(d).replace(/:/g, '-')}`;
 
@@ -235,6 +235,15 @@ export async function alAccion(app, accion, valor) {
     case 'modo': return cambiarModo(app);
     case 'informe': return generarInforme(app);
     case 'tocar': return tocar(app, valor);
+    case 'entendido': marcarPrimerExito(app); return {};
+    case 'abrir-en-pc': {
+      // la dirección sale del estado, no de lo que mande el panel: solo se abre lo que el celular tiene abierto
+      const url = estado.celular.url;
+      if (!url) return { error: t('accion.sinDireccion') };
+      if (!/^https?:\/\//i.test(url)) return { error: t('accion.direccionNoWeb') };
+      app.deps.abrirNavegador(url);
+      return { mensaje: t('accion.abiertoEnPc', { url }) };
+    }
     case 'atras':
       if (!app.chrome || !app.chrome.conectado) return { error: t('accion.sinConexionPestana') };
       await app.chrome.atras().catch(() => {});

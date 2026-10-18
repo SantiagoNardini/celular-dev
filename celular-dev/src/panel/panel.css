@@ -194,3 +194,59 @@ button.ocupado svg.ic { animation: girar .8s linear infinite; }
   .metricas { grid-template-columns: 1fr 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before { transition: none !important; animation: none !important; } }
+
+/* Guía del asistente: las pantallas del celular que hay que recorrer, en bucle (5 escenas de 3 s) */
+.guia { position: relative; width: 100%; min-height: 380px; align-self: stretch; }
+.escena { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 8px; padding: 30px 12px 14px; opacity: 0; animation: escena 15s infinite; animation-delay: calc(var(--i) * 3s); font-size: 12px; color: var(--texto-2); text-align: left; }
+@keyframes escena { 0% { opacity: 0; } 3% { opacity: 1; } 19% { opacity: 1; } 22%, 100% { opacity: 0; } }
+.leyenda { font-weight: 600; font-size: 12.5px; color: var(--texto); line-height: 1.35; margin-bottom: 6px; }
+.fila-mock { position: relative; display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px; border-radius: 9px; background: var(--suave); }
+.fila-mock.marcada { outline: 2px solid var(--acento); color: var(--texto); }
+/* un círculo que late sobre lo que hay que tocar */
+.fila-mock.marcada::after { content: ""; position: absolute; right: 10px; top: 50%; width: 20px; height: 20px; margin-top: -10px; border-radius: 50%; border: 2px solid var(--acento); animation: pulso 1.2s ease-out infinite; }
+@keyframes pulso { from { transform: scale(.5); opacity: 1; } to { transform: scale(1.5); opacity: 0; } }
+.puntos { display: flex; gap: 6px; padding: 6px 2px; }
+.puntos i { width: 11px; height: 11px; border-radius: 50%; background: var(--borde-fuerte); animation: punto 15s infinite; animation-delay: calc(var(--i) * 3s + var(--k) * .28s); }
+@keyframes punto { 0% { background: var(--borde-fuerte); } 0.5%, 19.5% { background: var(--acento); } 20.5%, 100% { background: var(--borde-fuerte); } }
+.logro { color: var(--ok); font-weight: 600; opacity: 0; animation: logro 15s infinite; animation-delay: calc(var(--i) * 3s); }
+@keyframes logro { 0%, 12% { opacity: 0; } 14%, 19% { opacity: 1; } 21%, 100% { opacity: 0; } }
+.interruptor { position: relative; width: 38px; height: 22px; border-radius: 11px; background: var(--borde-fuerte); animation: enc 15s infinite; animation-delay: calc(var(--i) * 3s); flex: none; }
+.interruptor::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; animation: perilla 15s infinite; animation-delay: calc(var(--i) * 3s); }
+@keyframes enc { 0%, 6% { background: var(--borde-fuerte); } 9%, 19% { background: var(--ok); } 22%, 100% { background: var(--borde-fuerte); } }
+@keyframes perilla { 0%, 6% { transform: translateX(0); } 9%, 19% { transform: translateX(16px); } 22%, 100% { transform: translateX(0); } }
+.cable-mock { position: relative; flex: 1; min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
+.puerto { width: 26px; height: 8px; border-radius: 3px; background: var(--borde-fuerte); }
+.cable { width: 14px; height: 90px; border-radius: 3px 3px 7px 7px; background: var(--texto-2); margin-top: -2px; animation: enchufar 15s infinite; animation-delay: calc(var(--i) * 3s); }
+@keyframes enchufar { 0% { transform: translateY(70px); } 8%, 19% { transform: translateY(0); } 22%, 100% { transform: translateY(70px); } }
+.dialogo-falso .casilla { display: flex; align-items: center; gap: 7px; margin-top: 10px; }
+.dialogo-falso .marca-casilla { width: 15px; height: 15px; border-radius: 4px; background: var(--acento); color: var(--sobre-acento); display: grid; place-items: center; font-size: 11px; flex: none; }
+.dialogo-falso .permitir { position: relative; color: var(--acento); font-weight: 700; }
+.dialogo-falso .permitir::after { content: ""; position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; border: 2px solid var(--acento); animation: pulso 1.3s ease-out infinite; }
+.mock-tienda { display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--texto); }
+.logo-chrome { width: 54px; height: 54px; border-radius: 50%; background: conic-gradient(var(--peligro) 0 33%, var(--alerta) 0 66%, var(--ok) 0); position: relative; }
+.logo-chrome::after { content: ""; position: absolute; inset: 15px; border-radius: 50%; background: var(--acento); border: 3px solid var(--tarjeta); }
+.instalar { position: relative; padding: 5px 18px; border-radius: 999px; background: var(--acento); color: var(--sobre-acento); font-size: 12px; font-weight: 600; }
+.instalar::after { content: ""; position: absolute; inset: -5px; border-radius: 999px; border: 2px solid var(--acento); animation: pulso 1.3s ease-out infinite; }
+.cargando { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.girando { width: 26px; height: 26px; border-radius: 50%; border: 3px solid var(--borde); border-top-color: var(--acento); animation: girar .8s linear infinite; }
+
+/* Primer éxito: un aviso con qué hacer, y un círculo que late sobre el celular */
+.bienvenida { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; padding: 14px 18px; border-color: var(--acento); }
+.bienvenida .marca-ok { width: 34px; height: 34px; border-radius: 50%; background: var(--ok); color: var(--tarjeta); display: grid; place-items: center; flex: none; }
+.bienvenida .marca-ok svg.ic { width: 18px; height: 18px; stroke-width: 2.6; }
+.bienvenida div:nth-child(2) { flex: 1; min-width: 0; }
+.bienvenida h2 { font-size: 15px; }
+.bienvenida p { color: var(--texto-2); font-size: 13px; margin-top: 2px; }
+.sugerencia { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; pointer-events: none; z-index: 2; }
+.sugerencia:empty { display: none; }
+.sugerencia .dedo { width: 56px; height: 56px; border-radius: 50%; background: rgba(255, 255, 255, .22); border: 2px solid rgba(255, 255, 255, .9); box-shadow: 0 0 0 1px rgba(0, 0, 0, .35); animation: pulso 1.6s ease-out infinite; }
+.sugerencia p { padding: 5px 14px; border-radius: 999px; background: rgba(0, 0, 0, .72); color: #fff; font-size: 13px; font-weight: 600; }
+
+/* La dirección de la página que tiene abierta el celular */
+.direccion { display: flex; align-items: center; gap: 2px; margin-top: 14px; padding: 3px 4px 3px 14px; border: 1px solid var(--borde); border-radius: 999px; background: var(--tarjeta); }
+.direccion svg.ic { color: var(--texto-3); margin-right: 6px; }
+.direccion .url { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 12.5px ui-monospace, "Cascadia Code", Consolas, monospace; color: var(--texto-2); }
+.direccion button { width: 30px; height: 30px; padding: 0; justify-content: center; border: 0; background: transparent; border-radius: 50%; color: var(--texto-2); flex: none; }
+.direccion button:hover { background: var(--suave); color: var(--texto); }
+.direccion.fuera { border-color: var(--alerta); }
+.aviso-fuera { color: var(--alerta); font-size: 12px; text-align: center; margin-top: 6px; }

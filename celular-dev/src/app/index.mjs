@@ -50,6 +50,8 @@ export function crearApp({ opciones = {}, cwd = process.cwd(), deps = {}, tiempo
     adb: null, chrome: null, traductor: null, panel: null, sitio: null, puertoDevtools: 0,
     dejarDeVigilar: null, alElegirSitio: null, rearmando: null
   };
+  // la primera vez, el panel le muestra qué hacer con el espejo
+  estado.primerExito = app.conPanel && !preferencia('primerExito');
   app.salir = codigo => salir(app, codigo);
   app.arrancar = () => arrancar(app);
   app.accion = (accion, valor) => alAccion(app, accion, valor);

@@ -311,6 +311,62 @@ test('el espejo manda una imagen nítida cuando la pantalla se queda quieta, sin
   await p.terminado;
 });
 
+test('el panel sabe qué página tiene abierta el celular, y se puede abrir en la computadora', async () => {
+  const abiertas = [];
+  const p = armar({ opciones: { carpeta: carpetaSitio }, deps: { abrirNavegador: url => abiertas.push(url) } });
+  await arrancarHastaCorrer(p);
+  const { origen, url } = p.app.sitio;
+  assert.equal(p.estado.celular.url, url, 'al conectar, la página que abrió');
+
+  // navega: cambia la dirección; el # y pushState también; una subventana (iframe) no cuenta
+  p.chrome.evento('Page.frameNavigated', { frame: { url: `${origen}/otra/`, urlFragment: '#tabla' } });
+  assert.equal(p.estado.celular.url, `${origen}/otra/#tabla`);
+  p.chrome.evento('Page.frameNavigated', { frame: { parentId: 'x', url: 'https://anuncios.example/' } });
+  assert.equal(p.estado.celular.url, `${origen}/otra/#tabla`);
+  p.chrome.evento('Page.navigatedWithinDocument', { url: `${origen}/otra/#fecha` });
+  assert.equal(p.estado.celular.url, `${origen}/otra/#fecha`);
+  assert.equal((await (await fetch(`${PANEL}/api/estado`)).json()).celular.url, `${origen}/otra/#fecha`);
+
+  // abrirla en la computadora; el panel no puede pedir otra dirección: se usa la que tiene el celular
+  assert.match((await accion('abrir-en-pc', 'https://malo.example/')).mensaje, /Abriendo en tu computadora/);
+  assert.deepEqual(abiertas, [`${origen}/otra/#fecha`]);
+  // una dirección que no es web no se abre
+  p.chrome.evento('Page.navigatedWithinDocument', { url: 'chrome://version/' });
+  assert.ok((await accion('abrir-en-pc')).error);
+  assert.equal(abiertas.length, 1);
+  await p.app.salir(0);
+  await p.terminado;
+});
+
+test('la primera vez muestra qué hacer con el espejo, hasta que se lo toca', async () => {
+  const { guardarPreferencia, preferencia } = await import('../src/lugares.mjs');
+  guardarPreferencia('primerExito', false);
+  const p = armar({ opciones: { carpeta: carpetaSitio } });
+  assert.equal(p.estado.primerExito, true);
+  await arrancarHastaCorrer(p);
+  p.chrome.cuadro(Buffer.from([0xff, 0xd8, 1, 0xff, 0xd9]));
+  await accion('tocar', { tipo: 'mover', x: 0.5, y: 0.5 });   // mover no cuenta, solo el primer toque
+  assert.equal(p.estado.primerExito, true);
+  await accion('tocar', { tipo: 'inicio', x: 0.5, y: 0.5 });
+  assert.equal(p.estado.primerExito, false);
+  assert.equal(preferencia('primerExito'), true, 'tiene que quedar recordado');
+  await p.app.salir(0);
+  await p.terminado;
+
+  // la próxima vez no vuelve a salir
+  assert.equal(armar({ opciones: { carpeta: carpetaSitio } }).estado.primerExito, false);
+  // el botón «Entendido» también lo cierra
+  guardarPreferencia('primerExito', false);
+  const q = armar({ opciones: { carpeta: carpetaSitio } });
+  assert.equal(q.estado.primerExito, true);
+  await q.app.accion('entendido');
+  assert.equal(q.estado.primerExito, false);
+  assert.equal(preferencia('primerExito'), true);
+  // y sin panel (solo terminal) no se muestra nada
+  guardarPreferencia('primerExito', false);
+  assert.equal(armar({ opciones: { carpeta: carpetaSitio, 'sin-panel': true } }).estado.primerExito, false);
+});
+
 test('sin opciones: el panel ofrece la carpeta usada antes, y se elige desde ahí', async () => {
   const p = armar();
   p.app.arrancar();

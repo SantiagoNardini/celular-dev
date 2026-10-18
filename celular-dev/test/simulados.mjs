@@ -108,6 +108,7 @@ export class ChromeSimulado extends EventEmitter {
 
   async evaluar(expresion) {
     if (expresion.includes('innerWidth')) return '411 × 773 px, densidad 1.75';
+    if (expresion.includes('history.back')) { this.atrases = (this.atrases || 0) + 1; return undefined; }
     return this.revision;
   }
 

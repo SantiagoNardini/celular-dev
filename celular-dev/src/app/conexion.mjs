@@ -16,6 +16,13 @@ export async function abrirEnCelular(app) {
   return true;
 }
 
+// La dirección que tiene abierta el celular, para mostrarla en el panel.
+function recordarPagina(app, url) {
+  if (!url || url === app.estado.celular.url) return;
+  app.estado.celular.url = url;
+  cambio(app);
+}
+
 // Busca la pestaña del sitio (esperando un poco si se acaba de abrir) y se conecta a su consola.
 export async function conectarConsola(app, intentos = 20) {
   const { estado, chrome } = app;
@@ -25,6 +32,7 @@ export async function conectarConsola(app, intentos = 20) {
       try {
         await chrome.conectar(pestana);
         estado.consola = true;
+        recordarPagina(app, pestana.url);
         // la red simulada dura lo que dura la conexión: al reconectar se vuelve a pedir
         if (estado.red !== 'normal') await chrome.red(estado.red).catch(() => {});
         cambio(app);
@@ -107,6 +115,9 @@ export function reintentarConsola(app) {
 export function escucharChrome(app, alCuadro) {
   const { chrome } = app;
   chrome.on('evento', (metodo, params) => {
+    // la página que tiene abierta el celular: cambia al navegar, y también al cambiar el # o con pushState
+    if (metodo === 'Page.frameNavigated' && params.frame && !params.frame.parentId) recordarPagina(app, params.frame.url + (params.frame.urlFragment || ''));
+    else if (metodo === 'Page.navigatedWithinDocument') recordarPagina(app, params.url);
     const aviso = app.traductor.traducir(metodo, params);
     if (!aviso || aviso.tipo === 'carga') return;
     registrarAviso(app, aviso);

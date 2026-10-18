@@ -7,7 +7,7 @@ Probá tu sitio en tu **celular Android real** mientras programás en la computa
 - **Ves la pantalla del celular en vivo en el panel, y la usás desde ahí**: tocar, arrastrar, la rueda del mouse y el teclado llegan al celular.
 - Te muestra **los errores del celular explicados en lenguaje simple**, agrupados, con el detalle técnico y el archivo y la línea (y un botón para abrirlo en el editor).
 - Con un botón arma un **informe para tu IA** (Claude, ChatGPT, Copilot…) con todos los errores, listo para pegar y pedir que los arregle.
-- Un **asistente** te guía para preparar el celular (depuración USB, el aviso de «Permitir»).
+- Un **asistente** te guía para preparar el celular, con una animación de cada pantalla que hay que recorrer (activar la depuración USB, el aviso de «Permitir»). Los pasos se tildan solos. La primera vez que todo funciona, un aviso te invita a tocar el celular desde el panel.
 - En **inglés o español**: arranca en inglés; el botón «Español» del panel lo cambia y lo recuerda (o `--idioma es`).
 
 Sin dependencias: solo Node 22 o más nuevo, y ADB (el panel lo descarga con un botón).
@@ -65,6 +65,7 @@ Para tener el comando `celular` en cualquier carpeta, una vez dentro de `celular
 | Botón | Qué hace |
 |---|---|
 | El celular (a la derecha) | La pantalla en vivo. Clic para tocar, arrastrar para deslizar, la rueda para bajar; con clic en la imagen, lo que escribís (o pegás) va al celular |
+| La dirección (debajo del celular) | La página que tiene abierta el celular ahora, como la barra de un navegador: se puede copiar o abrir en la computadora para compararla. Se pone en ámbar si el celular salió del sitio que elegiste |
 | Recargar | Recarga el sitio en el celular |
 | Revisar sitio | Revisa el sitio en el celular: desborde a lo ancho, botones chicos, contraste, imágenes sin alt, texto chico, controles sin nombre, tiempos y peso. Lo encontrado entra en el informe |
 | Red del celular | Normal, 3G lenta o sin conexión: simula esa red y recarga, para ver cómo carga en la calle |

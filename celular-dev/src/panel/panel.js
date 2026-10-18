@@ -38,6 +38,9 @@ const ICONOS = {
   celular: '<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/>',
   alerta: '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/>',
   cambiar: '<path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>',
+  copiar: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  tilde: '<path d="m20 6-11 11-5-5"/>',
+  globo: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
   limpiar: '<path d="M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/>'
 };
 const ic = nombre => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONOS[nombre]}</svg>`;
@@ -78,6 +81,11 @@ async function accion(nombre, valor, boton) {
 
 document.addEventListener('click', e => {
   const boton = e.target.closest('[data-accion]');
+  if (boton && boton.dataset.accion === 'copiar-url') {
+    const url = estado && estado.celular.url;
+    if (url) navigator.clipboard.writeText(url).then(() => avisar(tr('espejo.copiada'))).catch(() => avisar(url));
+    return;
+  }
   if (boton && !boton.classList.contains('ocupado')) accion(boton.dataset.accion, boton.dataset.valor, boton);
 });
 document.addEventListener('toggle', e => { if (e.target.id === 'ayuda') ayudaAbierta = e.target.open; }, true);
@@ -167,6 +175,42 @@ function pasosDelAsistente() {
   return { lista, actual: lista.findIndex(x => !x.ok) };
 }
 
+// La guía del celular: en el dibujo del teléfono se muestra, con una animación, lo que hay que hacer en el
+// paso en que está la persona (las pantallas del celular que tiene que recorrer, el aviso de «Permitir»...).
+// Las animaciones son solo CSS: no hace falta redibujar nada para que se muevan.
+const escena = (i, leyenda, contenido) => `<div class="escena" style="--i:${i}"><p class="leyenda">${leyenda}</p>${contenido}</div>`;
+const filaMock = (texto, marcada = false) => `<div class="fila-mock${marcada ? ' marcada' : ''}"><span>${texto}</span></div>`;
+
+function guiaCable() {
+  const puntos = Array.from({ length: 7 }, (_, k) => `<i style="--k:${k}"></i>`).join('');
+  return `<div class="guia" aria-label="${tr('guia.resumen')}">
+    ${escena(0, `1 · ${tr('guia.paso1')}`, filaMock(tr('guia.fila.red')) + filaMock(tr('guia.fila.pantalla')) + filaMock(tr('guia.fila.acerca'), true))}
+    ${escena(1, `2 · ${tr('guia.paso2')}`, filaMock(tr('guia.fila.compilacion'), true) + `<div class="puntos" style="--i:1">${puntos}</div><p class="logro" style="--i:1">${tr('guia.listo')}</p>`)}
+    ${escena(2, `3 · ${tr('guia.paso3')}`, filaMock(tr('guia.fila.sistema')) + filaMock(tr('guia.fila.opciones'), true) + filaMock(tr('guia.fila.acerca')))}
+    ${escena(3, `4 · ${tr('guia.paso4')}`, `<div class="fila-mock marcada"><span>${tr('guia.fila.depuracion')}</span><span class="interruptor" style="--i:3"></span></div>`)}
+    ${escena(4, `5 · ${tr('guia.paso5')}`, `<div class="cable-mock"><div class="puerto"></div><div class="cable" style="--i:4"></div></div>`)}
+  </div>`;
+}
+
+// Lo que se dibuja en el teléfono según el paso actual; pie: el texto que va debajo.
+function guiaDelPaso(id) {
+  const cel = estado.pasos.celular;
+  if (id === 'cable') return { dibujo: guiaCable(), pie: tr('guia.pie') };
+  if (id === 'permitir' && cel === 'unauthorized') {
+    return {
+      dibujo: `<div class="dialogo-falso"><b>${tr('asistente.dialogoTitulo')}</b>${tr('asistente.dialogoTexto')}
+        <p class="casilla"><span class="marca-casilla">✓</span>${tr('asistente.dialogoSiempre')}</p>
+        <div class="acciones"><span>${tr('asistente.dialogoCancelar')}</span><span class="permitir">${tr('asistente.dialogoPermitir')}</span></div></div>`,
+      pie: tr('asistente.asiSeVe')
+    };
+  }
+  if (id === 'permitir') return { dibujo: `<p class="vacia">${tr('asistente.desbloquea')}</p>`, pie: tr('asistente.tuCelular') };
+  if (id === 'chrome') {
+    return { dibujo: `<div class="mock-tienda"><span class="logo-chrome"></span><b>Chrome</b><span class="instalar">${tr('guia.instalar')}</span></div>`, pie: tr('asistente.tuCelular') };
+  }
+  return { dibujo: `<div class="cargando"><span class="girando"></span><p class="vacia">${id === 'abierto' ? tr('asistente.abriendo') : tr('asistente.preparando')}</p></div>`, pie: tr('asistente.tuCelular') };
+}
+
 function vistaAsistente() {
   const { lista, actual } = pasosDelAsistente();
   const pasos = lista.map((x, i) => {
@@ -177,17 +221,14 @@ function vistaAsistente() {
       ${i === actual ? `<div class="detalle">${x.detalle}</div>` : ''}</div>
     </div>`;
   }).join('');
-  const esperandoPermiso = lista[actual] && lista[actual].id === 'permitir' && estado.pasos.celular === 'unauthorized';
-  const dibujo = esperandoPermiso
-    ? `<div class="dialogo-falso"><b>${tr('asistente.dialogoTitulo')}</b>${tr('asistente.dialogoTexto')}<div class="acciones"><span>${tr('asistente.dialogoCancelar')}</span><span style="color:var(--acento);font-weight:500">${tr('asistente.dialogoPermitir')}</span></div></div>`
-    : `<p class="vacia">${lista[actual] && lista[actual].id === 'cable' ? tr('asistente.conectaCelular') : tr('asistente.preparando')}</p>`;
+  const { dibujo, pie } = guiaDelPaso(lista[actual] ? lista[actual].id : 'abierto');
   return `
     <h1>${tr('asistente.titulo')}</h1>
     <p class="sub">${estado.sitio ? tr('asistente.paraVer', { nombre: estado.sitio.nombre }) + ' ' : ''}${tr('asistente.seTilda')}</p>
     <div class="asistente">
       <section class="tarjeta">${pasos}${actual <= 2 ? ayudaUsb() : ''}</section>
       <div><div class="telefono"><div class="pantalla">${dibujo}</div></div>
-      <p class="pie-telefono">${esperandoPermiso ? tr('asistente.asiSeVe') : tr('asistente.tuCelular')}</p></div>
+      <p class="pie-telefono">${pie}</p></div>
     </div>`;
 }
 
@@ -239,6 +280,12 @@ function vistaPanel() {
         <p class="simple">${conCodigo(p.simple)}</p>${p.ejemplos.length ? `<p class="tecnico">${p.ejemplos.map(esc).join(' · ')}</p>` : ''}</div></div>`).join(''),
     errores: `<h2>${tr('panel.erroresTitulo')} ${s.avisos.length ? `<span class="cuenta">${s.avisos.length}</span><button class="chico fantasma" data-accion="limpiar">${ic('limpiar')}${tr('panel.limpiar')}</button>` : ''}</h2>${errores}`,
     actividad: `<h2>${tr('panel.actividad')}</h2>${actividad}`,
+    bienvenida: s.primerExito && s.espejo ? `<section class="tarjeta bienvenida">
+        <span class="marca-ok">${ic('tilde')}</span>
+        <div><h2>${tr('bienvenida.titulo')}</h2><p>${tr('bienvenida.texto')}</p></div>
+        <button class="principal chico" data-accion="entendido">${tr('bienvenida.entendido')}</button></section>` : '',
+    espejoSugerencia: s.primerExito && s.espejo ? `<span class="dedo"></span><p>${tr('bienvenida.sugerencia')}</p>` : '',
+    direccion: direccionDelCelular(s),
     espejoTapa: s.espejo ? '' : `<p class="vacia">${s.consola ? tr('espejo.esperando') : tr('espejo.sinPestana')}</p>`,
     pie: `<div class="controles-espejo">
         <button data-accion="atras" title="${tr('espejo.atras')}" aria-label="${tr('espejo.atras')}">${ic('atras')}</button>
@@ -250,11 +297,26 @@ function vistaPanel() {
   };
 }
 
+// La página que tiene abierta el celular, como la barra de direcciones de un navegador: se puede copiar, o
+// abrir en la computadora para compararla con lo que se ve en el celular. Avisa si el celular salió del sitio.
+function direccionDelCelular(s) {
+  const url = s.celular.url;
+  if (!url) return '';
+  let fuera = false;
+  try { fuera = !!s.sitio && new URL(url).origin !== new URL(s.sitio.url).origin; } catch { /* una dirección rara: no se compara */ }
+  return `<div class="direccion${fuera ? ' fuera' : ''}" title="${esc(tr('espejo.direccion'))}: ${esc(url)}">
+      ${ic('globo')}<span class="url">${esc(url.replace(/^https?:\/\//, ''))}</span>
+      <button data-accion="copiar-url" title="${tr('espejo.copiar')}" aria-label="${tr('espejo.copiar')}">${ic('copiar')}</button>
+      <button data-accion="abrir-en-pc" title="${tr('espejo.abrirEnPc')}" aria-label="${tr('espejo.abrirEnPc')}">${ic('abrir')}</button>
+    </div>${fuera ? `<p class="aviso-fuera">${tr('espejo.fueraDelSitio')}</p>` : ''}`;
+}
+
 // Cada pantalla se arma una vez (esqueleto) y después solo se reemplaza la zona que cambió: si se
 // redibujara todo con cada error que llega, un clic que cae justo en ese momento se perdería. El espejo
 // está en el esqueleto: así la imagen en vivo no se corta cada vez que cambia algo.
 const ESQUELETOS = {
   corriendo: `<div data-zona="oferta"></div><div class="tablero"><div>
+      <div data-zona="bienvenida"></div>
       <div class="metricas" data-zona="metricas"></div>
       <div data-zona="botones"></div>
       <section class="tarjeta lista" data-zona="revision"></section>
@@ -264,7 +326,9 @@ const ESQUELETOS = {
       <div class="telefono espejo"><div class="pantalla">
         <img id="espejo" tabindex="0" draggable="false" alt="">
         <div class="tapa" data-zona="espejoTapa"></div>
+        <div class="sugerencia" data-zona="espejoSugerencia"></div>
       </div></div>
+      <div data-zona="direccion"></div>
       <div data-zona="pie"></div>
     </div></div>`,
   otra: '<div data-zona="oferta"></div><div data-zona="principal"></div>'

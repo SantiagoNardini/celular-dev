@@ -24,10 +24,11 @@ export function estadoInicial({ carpetaProyecto, esProyecto, manual }) {
     descargaAdb: null,                 // null, o el porcentaje mientras se descarga ADB, o 'error'
     ofrecerAccesos: false,             // todavía no hay accesos directos: el panel ofrece crearlos
     servidorOk: true,
-    celular: { modelo: '', android: '', navegador: '', pantalla: '' },
+    celular: { modelo: '', android: '', navegador: '', pantalla: '', url: '' },   // url: la página que tiene abierta ahora
     modo: manual ? 'manual' : 'vivo',  // vivo | manual | live-server
     consola: false,
     espejo: false,                     // llegan cuadros de la pantalla del celular
+    primerExito: false,                // todavía no tocó el espejo: el panel le muestra qué hacer
     red: 'normal',                     // normal | lenta | sin-conexion: la red que se simula en el celular
     revision: null,                    // la última revisión del sitio: { hora, red, puntos }
     revisando: false,
