@@ -77,16 +77,18 @@ export async function tocar(app, valor) {
   if (!chrome || !chrome.conectado || !espejo.ancho || !valor || typeof valor !== 'object') return {};
   const x = Math.round(Math.min(Math.max(+valor.x || 0, 0), 1) * espejo.ancho);
   const y = Math.round(Math.min(Math.max(+valor.y || 0, 0), 1) * espejo.alto);
-  try {
-    switch (valor.tipo) {
-      case 'inicio': await chrome.tocar('touchStart', x, y); break;
-      case 'mover': await chrome.tocar('touchMove', x, y); break;
-      case 'fin': await chrome.tocar('touchEnd', x, y); break;
-      case 'rueda': await chrome.rueda(x, y, Math.round(+valor.dx || 0), Math.round(+valor.dy || 0)); break;
-      case 'texto': if (typeof valor.texto === 'string' && valor.texto) await chrome.escribir(valor.texto.slice(0, 200)); break;
-      case 'tecla': if (TECLAS.has(valor.tecla)) await chrome.tecla(valor.tecla); break;
-      default: break;
-    }
-  } catch { /* un toque perdido no importa: el siguiente llega */ }
+  // No se espera a que el celular conteste: así el panel manda el siguiente movimiento enseguida. Van
+  // todos por la misma conexión con Chrome, así que llegan en orden.
+  const momento = Number.isFinite(+valor.t) && +valor.t > 0 ? +valor.t : 0;
+  const perdido = () => {};   // un toque perdido no importa: el siguiente llega
+  switch (valor.tipo) {
+    case 'inicio': chrome.tocar('touchStart', x, y, momento).catch(perdido); break;
+    case 'mover': chrome.tocar('touchMove', x, y, momento).catch(perdido); break;
+    case 'fin': chrome.tocar('touchEnd', x, y, momento).catch(perdido); break;
+    case 'rueda': chrome.rueda(x, y, Math.round(+valor.dx || 0), Math.round(+valor.dy || 0)).catch(perdido); break;
+    case 'texto': if (typeof valor.texto === 'string' && valor.texto) chrome.escribir(valor.texto.slice(0, 200)).catch(perdido); break;
+    case 'tecla': if (TECLAS.has(valor.tecla)) chrome.tecla(valor.tecla).catch(perdido); break;
+    default: break;
+  }
   return {};
 }

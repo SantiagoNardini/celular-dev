@@ -214,6 +214,12 @@ test('el espejo: pide cuadros solo mientras alguien mira, los manda al panel y l
   await accion('tocar', { tipo: 'tecla', tecla: 'F5' });   // no permitida: no llega
   assert.deepEqual(p.chrome.toques, [['touchStart', 206, 387], ['touchEnd', 206, 387], ['rueda', 0, 773, 0, 120]]);
   assert.deepEqual(p.chrome.escrito, ['hola', '[Enter]']);
+  // la hora de cada toque llega a Chrome (así calcula la velocidad al deslizar)
+  await accion('tocar', { tipo: 'mover', x: 0.5, y: 0.4, t: 1792300000123 });
+  assert.equal(p.chrome.momentos.at(-1), 1792300000123);
+  // el botón Atrás del panel
+  assert.deepEqual(await accion('atras'), {});
+  assert.equal(p.chrome.atrases, 1);
 
   // nadie mira: deja de pedir cuadros
   respuesta.destroy();

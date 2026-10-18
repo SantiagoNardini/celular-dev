@@ -235,6 +235,10 @@ export async function alAccion(app, accion, valor) {
     case 'modo': return cambiarModo(app);
     case 'informe': return generarInforme(app);
     case 'tocar': return tocar(app, valor);
+    case 'atras':
+      if (!app.chrome || !app.chrome.conectado) return { error: t('accion.sinConexionPestana') };
+      await app.chrome.atras().catch(() => {});
+      return {};
     case 'idioma': return cambiarIdioma(app, valor);
     case 'abrir':
       if (estado.fase !== 'corriendo') return { error: t('accion.noListo') };

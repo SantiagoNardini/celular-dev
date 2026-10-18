@@ -386,7 +386,9 @@ Necesita el celular conectado por USB con la depuración USB activada, y Chrome 
 
     'espejo.titulo': 'Tu celular',
     'espejo.alt': 'La pantalla del celular en vivo. Tocala para usarlo desde acá.',
-    'espejo.ayuda': 'En vivo: tocalo desde acá',
+    'espejo.ayuda': 'tocalo desde acá',
+    'espejo.atras': 'Atrás',
+    'espejo.enVivo': 'EN VIVO',
     'espejo.esperando': 'Esperando la pantalla… Si está apagada, prendela.',
     'espejo.sinPestana': 'Sin conexión con la pestaña',
 

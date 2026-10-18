@@ -118,9 +118,11 @@ export class Chrome extends EventEmitter {
 
   // ---------- Espejo: la pantalla en vivo y tocarla desde la PC ----------
 
-  // Chrome manda un cuadro y no manda el siguiente hasta que se le avisa que llegó: avisando un rato
-  // después, se limita a unos 12 cuadros por segundo (alcanza para seguirlo y no recalienta nada).
-  iniciarEspejo({ ancho = 800, alto = 1800, calidad = 65 } = {}) {
+  // Chrome manda un cuadro y no manda el siguiente hasta que se le avisa que llegó. Se avisa enseguida,
+  // pero sin pasar de unos 30 por segundo: fluido para usarlo, sin recalentar el celular.
+  // 720 px de ancho alcanza para la pantalla de casi cualquier celular, sin escalar (menos trabajo).
+  iniciarEspejo({ ancho = 720, alto = 1600, calidad = 60 } = {}) {
+    this.ultimoCuadro = 0;
     return this.enviar('Page.startScreencast', { format: 'jpeg', quality: calidad, maxWidth: ancho, maxHeight: alto, everyNthFrame: 1 });
   }
 
@@ -129,18 +131,30 @@ export class Chrome extends EventEmitter {
   }
 
   alCuadro({ data, metadata, sessionId }) {
-    setTimeout(() => this.enviar('Page.screencastFrameAck', { sessionId }).catch(() => {}), 80);
+    const ahora = Date.now();
+    const falta = Math.max(0, 33 - (ahora - (this.ultimoCuadro || 0)));
+    this.ultimoCuadro = ahora + falta;
+    setTimeout(() => this.enviar('Page.screencastFrameAck', { sessionId }).catch(() => {}), falta);
     // el cuadro es solo la página: el alto que informa Chrome incluye su barra de arriba (offsetTop)
     this.emit('cuadro', { datos: Buffer.from(data, 'base64'), ancho: metadata.deviceWidth, alto: metadata.deviceHeight - (metadata.offsetTop || 0) });
   }
 
-  // tipo: touchStart, touchMove o touchEnd; x e y en píxeles de la página
-  tocar(tipo, x, y) {
-    return this.enviar('Input.dispatchTouchEvent', { type: tipo, touchPoints: tipo === 'touchEnd' ? [] : [{ x, y }] }, 3000);
+  // tipo: touchStart, touchMove o touchEnd; x e y en píxeles de la página. momento: cuándo se tocó en
+  // la computadora (ms); con eso Chrome calcula bien la velocidad y, al soltar rápido, la página sigue
+  // deslizándose como con el dedo.
+  tocar(tipo, x, y, momento) {
+    const datos = { type: tipo, touchPoints: tipo === 'touchEnd' ? [] : [{ x, y, radiusX: 6, radiusY: 6, force: 1 }] };
+    if (momento) datos.timestamp = momento / 1000;
+    return this.enviar('Input.dispatchTouchEvent', datos, 3000);
   }
 
   rueda(x, y, deltaX, deltaY) {
     return this.enviar('Input.dispatchMouseEvent', { type: 'mouseWheel', x, y, deltaX, deltaY }, 3000);
+  }
+
+  // Atrás, como el botón del celular
+  atras() {
+    return this.evaluar('history.back()');
   }
 
   escribir(texto) {

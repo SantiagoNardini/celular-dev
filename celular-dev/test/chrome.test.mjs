@@ -30,3 +30,30 @@ test('los cuadros no se mezclan con los eventos de la consola', () => {
   chrome.recibir({ method: 'Page.screencastFrame', params: { data: '', sessionId: 1, metadata: { deviceWidth: 1, deviceHeight: 1 } } });
   assert.deepEqual(eventos, ['Runtime.consoleAPICalled']);
 });
+
+test('los cuadros seguidos se piden a unos 30 por segundo como mucho', async () => {
+  const chrome = new Chrome(0);
+  const avisos = [];
+  chrome.enviar = async (metodo, params) => { if (metodo === 'Page.screencastFrameAck') avisos.push([params.sessionId, Date.now()]); };
+  const cuadro = n => chrome.recibir({ method: 'Page.screencastFrame', params: { data: '', sessionId: n, metadata: { deviceWidth: 1, deviceHeight: 1 } } });
+  const inicio = Date.now();
+  cuadro(1); cuadro(2); cuadro(3);
+  await new Promise(r => setTimeout(r, 150));
+  assert.deepEqual(avisos.map(a => a[0]), [1, 2, 3]);
+  // el primero enseguida; los otros, separados unos 33 ms
+  assert.ok(avisos[0][1] - inicio < 25, 'el primero tardó');
+  assert.ok(avisos[2][1] - inicio >= 60, 'no esperó entre cuadros');
+});
+
+test('un toque lleva la hora en segundos, como la pide Chrome', async () => {
+  const chrome = new Chrome(0);
+  let enviado;
+  chrome.enviar = async (metodo, params) => { enviado = [metodo, params]; };
+  await chrome.tocar('touchMove', 10, 20, 1792300000500);
+  assert.equal(enviado[0], 'Input.dispatchTouchEvent');
+  assert.equal(enviado[1].timestamp, 1792300000.5);
+  assert.deepEqual(enviado[1].touchPoints.map(p => [p.x, p.y]), [[10, 20]]);
+  await chrome.tocar('touchEnd', 10, 20);
+  assert.deepEqual(enviado[1].touchPoints, []);
+  assert.equal(enviado[1].timestamp, undefined);
+});

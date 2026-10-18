@@ -23,6 +23,25 @@ const rutaCorta = ruta => {
 const conCodigo = t => esc(t).replace(/`([^`]+)`/g, '<code>$1</code>');
 const nombreRed = red => tr(`red.${red}`);
 
+// Íconos de línea (dibujados acá, sin archivos aparte), del color del texto que los rodea.
+const ICONOS = {
+  recargar: '<path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/>',
+  revisar: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m22 4-10 10.01-3-3"/>',
+  captura: '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
+  vivo: '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>',
+  manual: '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>',
+  informe: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/>',
+  atras: '<path d="m15 18-6-6 6-6"/>',
+  abrir: '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6M10 14 21 3"/>',
+  carpeta: '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
+  servidor: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+  celular: '<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/>',
+  alerta: '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/>',
+  cambiar: '<path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>',
+  limpiar: '<path d="M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/>'
+};
+const ic = nombre => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONOS[nombre]}</svg>`;
+
 function avisar(texto, mal = false) {
   avisoEl.textContent = texto;
   avisoEl.className = 'toast visible' + (mal ? ' mal' : '');
@@ -100,7 +119,7 @@ function vistaInicio() {
     <p class="sub">${tr('inicio.sub')}</p>
     <div class="opciones">
       <section class="tarjeta opcion ${servidores.length ? '' : 'destacada'}">
-        <div class="icono" aria-hidden="true">📁</div>
+        <div class="icono">${ic('carpeta')}</div>
         <h2>${tr('inicio.carpetaTitulo')}</h2>
         <p class="sub">${tr('inicio.carpetaSub')}</p>
         ${carpeta.tieneSitio ? `<p class="nota" style="margin-bottom:10px" title="${esc(carpeta.ruta)}">${tr('inicio.hayUnSitio', { ruta: rutaCorta(carpeta.ruta) })}</p>` : ''}
@@ -108,7 +127,7 @@ function vistaInicio() {
         ${usadas}
       </section>
       <section class="tarjeta opcion ${servidores.length ? 'destacada' : ''}">
-        <div class="icono" aria-hidden="true">🌐</div>
+        <div class="icono">${ic('servidor')}</div>
         <h2>${tr('inicio.servidorTitulo')}</h2>
         <p class="sub">${tr('inicio.servidorSub')}</p>
         ${filas}
@@ -186,36 +205,44 @@ function vistaPanel() {
   const modo = s.modo === 'vivo' ? tr('panel.enVivo') : s.modo === 'manual' ? tr('panel.manual') : 'Live Server';
   return {
     metricas: `
-      <div class="metrica"><p>${tr('panel.celular')}</p><p class="${s.pasos.celular === 'ok' ? 'verde' : 'rojo'}">${s.pasos.celular === 'ok' ? esc(s.celular.modelo || tr('panel.conectado')) : tr('panel.desconectado')}</p></div>
-      <div class="metrica"><p>${tr('panel.sitio')}</p><p class="${s.servidorOk ? '' : 'rojo'}" title="${esc(s.sitio.url)}">${esc(s.sitio.nombre)}${s.servidorOk ? '' : ` (${tr('panel.apagado')})`}</p></div>
-      <div class="metrica"><p>${tr('panel.errores')}</p><p class="${s.errores ? 'rojo' : 'verde'}">${s.errores}</p></div>`,
+      <div class="metrica"><p>${ic('celular')}${tr('panel.celular')}</p><p class="${s.pasos.celular === 'ok' ? 'verde' : 'rojo'}">${s.pasos.celular === 'ok' ? esc(s.celular.modelo || tr('panel.conectado')) : tr('panel.desconectado')}</p></div>
+      <div class="metrica"><p>${ic(s.sitio.tipo === 'carpeta' ? 'carpeta' : 'servidor')}${tr('panel.sitio')}</p><p class="${s.servidorOk ? '' : 'rojo'}" title="${esc(s.sitio.url)}">${esc(s.sitio.nombre)}${s.servidorOk ? '' : ` (${tr('panel.apagado')})`}</p></div>
+      <div class="metrica"><p>${ic('alerta')}${tr('panel.errores')}</p><p class="${s.errores ? 'rojo' : 'verde'}">${s.errores}</p></div>`,
     botones: `
       ${s.necesitaCodigo ? `<div class="banda"><p>${tr('panel.sinCodigo')}</p>
-        <button class="chico" data-accion="elegir-codigo">${tr('panel.elegirCodigo')}</button></div>` : ''}
-      <div class="botones">
-        <button data-accion="recargar">↻ ${tr('panel.recargar')}</button>
-        <button data-accion="revisar">${s.revisando ? tr('panel.revisando') : `✓ ${tr('panel.revisar')}`}</button>
-        <button data-accion="captura">📷 ${tr('panel.captura')}</button>
-        <button data-accion="modo">${modoTexto}</button>
-        <button class="principal" data-accion="informe">${tr('panel.informe')}</button>
-      </div>
-      <div class="red" role="group" aria-label="${tr('panel.redDelCelular')}">
-        <span class="nota">${tr('panel.redDelCelular')}:</span>
-        ${['normal', 'lenta', 'sin-conexion'].map(v =>
-          `<button class="chico ${s.red === v ? 'activa' : ''}" aria-pressed="${s.red === v}" data-accion="red" data-valor="${v}">${nombreRed(v)}</button>`).join('')}
-      </div>
-      <div class="botones" style="margin-top:8px">
-        <button class="chico" data-accion="abrir">${tr('panel.abrirDeNuevo')}</button>
-        <button class="chico" data-accion="cambiar-sitio">${tr('panel.cambiarSitio')}</button>
-        <button class="chico" data-accion="abrir-datos">${tr('panel.verDatos')}</button>
-      </div>`,
-    revision: !s.revision ? '' : `<h2>${tr('panel.revision')} <span class="nota" style="font-weight:400">${esc(s.revision.hora)}${s.revision.red !== 'normal' ? ` · ${tr('panel.red')} ${nombreRed(s.revision.red)}` : ''}</span></h2>` +
+        <button class="chico" data-accion="elegir-codigo">${ic('carpeta')}${tr('panel.elegirCodigo')}</button></div>` : ''}
+      <section class="tarjeta barra">
+        <div class="fila">
+          <button data-accion="recargar">${ic('recargar')}${tr('panel.recargar')}</button>
+          <button data-accion="revisar">${ic('revisar')}${s.revisando ? tr('panel.revisando') : tr('panel.revisar')}</button>
+          <button data-accion="captura">${ic('captura')}${tr('panel.captura')}</button>
+          <button data-accion="modo">${ic(s.modo === 'manual' ? 'vivo' : 'manual')}${modoTexto}</button>
+          <button class="principal" data-accion="informe" style="margin-left:auto">${ic('informe')}${tr('panel.informe')}</button>
+        </div>
+        <div class="fila">
+          <span class="etiqueta">${tr('panel.redDelCelular')}</span>
+          <div class="segmentos" role="group" aria-label="${tr('panel.redDelCelular')}">
+            ${['normal', 'lenta', 'sin-conexion'].map(v =>
+              `<button class="${s.red === v ? 'activa' : ''}" aria-pressed="${s.red === v}" data-accion="red" data-valor="${v}">${nombreRed(v)}</button>`).join('')}
+          </div>
+          <span style="flex:1"></span>
+          <button class="chico fantasma" data-accion="cambiar-sitio">${ic('cambiar')}${tr('panel.cambiarSitio')}</button>
+          <button class="chico fantasma" data-accion="abrir-datos">${ic('carpeta')}${tr('panel.verDatos')}</button>
+        </div>
+      </section>`,
+    revision: !s.revision ? '' : `<h2>${tr('panel.revision')} <span class="cuenta">${esc(s.revision.hora)}${s.revision.red !== 'normal' ? ` · ${tr('panel.red')} ${nombreRed(s.revision.red)}` : ''}</span></h2>` +
       s.revision.puntos.map(p => `<div class="item ${p.nivel}"><span class="punto" aria-hidden="true"></span><div class="cuerpo">
         <p class="simple">${conCodigo(p.simple)}</p>${p.ejemplos.length ? `<p class="tecnico">${p.ejemplos.map(esc).join(' · ')}</p>` : ''}</div></div>`).join(''),
-    errores: `<h2>${tr('panel.erroresTitulo')} ${s.avisos.length ? `<button class="chico" data-accion="limpiar">${tr('panel.limpiar')}</button>` : ''}</h2>${errores}`,
+    errores: `<h2>${tr('panel.erroresTitulo')} ${s.avisos.length ? `<span class="cuenta">${s.avisos.length}</span><button class="chico fantasma" data-accion="limpiar">${ic('limpiar')}${tr('panel.limpiar')}</button>` : ''}</h2>${errores}`,
     actividad: `<h2>${tr('panel.actividad')}</h2>${actividad}`,
     espejoTapa: s.espejo ? '' : `<p class="vacia">${s.consola ? tr('espejo.esperando') : tr('espejo.sinPestana')}</p>`,
-    pie: `<p class="pie-telefono">${s.espejo ? tr('espejo.ayuda') : tr('espejo.titulo')} · ${modo}${s.red !== 'normal' ? ` · <b class="alerta-texto">${tr('panel.red')} ${nombreRed(s.red)}</b>` : ''}</p>`
+    pie: `<div class="controles-espejo">
+        <button data-accion="atras" title="${tr('espejo.atras')}" aria-label="${tr('espejo.atras')}">${ic('atras')}</button>
+        <button data-accion="recargar" title="${tr('panel.recargar')}" aria-label="${tr('panel.recargar')}">${ic('recargar')}</button>
+        <button data-accion="captura" title="${tr('panel.captura')}" aria-label="${tr('panel.captura')}">${ic('captura')}</button>
+        <button data-accion="abrir" title="${tr('panel.abrirDeNuevo')}" aria-label="${tr('panel.abrirDeNuevo')}">${ic('abrir')}</button>
+      </div>
+      <p class="estado-espejo">${s.espejo ? `<span class="vivo">${tr('espejo.enVivo')}</span> · ${tr('espejo.ayuda')}` : tr('espejo.titulo')} · ${modo}${s.red !== 'normal' ? ` · <b class="alerta-texto">${tr('panel.red')} ${nombreRed(s.red)}</b>` : ''}</p>`
   };
 }
 
@@ -226,9 +253,9 @@ const ESQUELETOS = {
   corriendo: `<div data-zona="oferta"></div><div class="tablero"><div>
       <div class="metricas" data-zona="metricas"></div>
       <div data-zona="botones"></div>
-      <section class="lista" data-zona="revision"></section>
-      <section class="lista" data-zona="errores"></section>
-      <section class="lista" data-zona="actividad"></section>
+      <section class="tarjeta lista" data-zona="revision"></section>
+      <section class="tarjeta lista" data-zona="errores"></section>
+      <section class="tarjeta lista actividad" data-zona="actividad"></section>
     </div><div>
       <div class="telefono espejo"><div class="pantalla">
         <img id="espejo" tabindex="0" draggable="false" alt="">
@@ -317,10 +344,22 @@ function tocar(valor) {
   cola = cola.then(() => pedir('tocar', valor)).catch(() => {});
 }
 
-const enImagen = e => {
-  const r = e.target.getBoundingClientRect();
-  return { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height };
+// dónde, en fracción de la imagen, y cuándo (ms, en la hora de la computadora)
+const enImagen = (e, imagen = e.target) => {
+  const r = imagen.getBoundingClientRect();
+  return { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height, t: Math.round(performance.timeOrigin + e.timeStamp) };
 };
+// un círculo donde se tocó, para ver que el toque llegó
+function marcarToque(e) {
+  const pantalla = e.target.parentElement;
+  const r = pantalla.getBoundingClientRect();
+  const marca = document.createElement('span');
+  marca.className = 'toque';
+  marca.style.left = `${e.clientX - r.left}px`;
+  marca.style.top = `${e.clientY - r.top}px`;
+  pantalla.appendChild(marca);
+  marca.addEventListener('animationend', () => marca.remove());
+}
 let tocando = false;
 
 document.addEventListener('pointerdown', e => {
@@ -329,11 +368,14 @@ document.addEventListener('pointerdown', e => {
   e.target.focus();
   e.target.setPointerCapture(e.pointerId);
   tocando = true;
+  marcarToque(e);
   tocar({ tipo: 'inicio', ...enImagen(e) });
 });
 document.addEventListener('pointermove', e => {
   if (!tocando || e.target.id !== 'espejo') return;
-  tocar({ tipo: 'mover', ...enImagen(e) });
+  // si el mouse se movió rápido, el navegador junta varios movimientos en uno: se usa el último, con su hora
+  const juntos = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
+  tocar({ tipo: 'mover', ...enImagen(juntos.length ? juntos[juntos.length - 1] : e, e.target) });
 });
 const soltar = e => {
   if (!tocando) return;

@@ -386,7 +386,9 @@ Needs the phone connected over USB with USB debugging turned on, and Chrome on t
 
     'espejo.titulo': 'Your phone',
     'espejo.alt': 'The phone\'s screen, live. Click it to use the phone from here.',
-    'espejo.ayuda': 'Live: use it from here',
+    'espejo.ayuda': 'use it from here',
+    'espejo.atras': 'Back',
+    'espejo.enVivo': 'LIVE',
     'espejo.esperando': 'Waiting for the screen… If it is off, turn it on.',
     'espejo.sinPestana': 'No connection to the tab',
 

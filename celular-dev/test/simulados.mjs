@@ -115,7 +115,8 @@ export class ChromeSimulado extends EventEmitter {
   async captura() { return Buffer.from('89504e470d0a1a0a', 'hex'); }
   async iniciarEspejo() { this.espejo = true; }
   detenerEspejo() { this.espejo = false; return Promise.resolve(); }
-  async tocar(tipo, x, y) { this.toques.push([tipo, x, y]); }
+  async tocar(tipo, x, y, momento) { this.toques.push([tipo, x, y]); this.momentos = [...(this.momentos || []), momento]; }
+  async atras() { this.atrases = (this.atrases || 0) + 1; }
   async rueda(x, y, dx, dy) { this.toques.push(['rueda', x, y, dx, dy]); }
   async escribir(texto) { this.escrito.push(texto); }
   async tecla(nombre) { this.escrito.push(`[${nombre}]`); }
