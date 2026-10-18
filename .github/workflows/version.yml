@@ -1,0 +1,42 @@
+# Publica una versión: al subir una etiqueta como v0.2.0, corre las pruebas, arma los paquetes de
+# Windows, Mac y Linux (con Node incluido) y los sube a Releases, con su huella SHA-256.
+#   git tag v0.2.0 && git push origin v0.2.0
+name: Versión
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  paquetes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Pruebas
+        working-directory: celular-dev
+        run: npm test
+      - name: La etiqueta coincide con la versión de package.json
+        working-directory: celular-dev
+        run: |
+          esperada="v$(node -p "require('./package.json').version")"
+          if [ "$esperada" != "$GITHUB_REF_NAME" ]; then
+            echo "La etiqueta es $GITHUB_REF_NAME pero package.json dice $esperada: cambiá una de las dos."
+            exit 1
+          fi
+      - name: Armar los paquetes
+        working-directory: celular-dev
+        run: npm run empaquetar
+      - name: Publicar en Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            paquete/*.zip
+            paquete/*.tar.gz
+            paquete/*.sha256

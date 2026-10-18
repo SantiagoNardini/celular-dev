@@ -130,7 +130,8 @@ export class Chrome extends EventEmitter {
 
   alCuadro({ data, metadata, sessionId }) {
     setTimeout(() => this.enviar('Page.screencastFrameAck', { sessionId }).catch(() => {}), 80);
-    this.emit('cuadro', { datos: Buffer.from(data, 'base64'), ancho: metadata.deviceWidth, alto: metadata.deviceHeight });
+    // el cuadro es solo la página: el alto que informa Chrome incluye su barra de arriba (offsetTop)
+    this.emit('cuadro', { datos: Buffer.from(data, 'base64'), ancho: metadata.deviceWidth, alto: metadata.deviceHeight - (metadata.offsetTop || 0) });
   }
 
   // tipo: touchStart, touchMove o touchEnd; x e y en píxeles de la página

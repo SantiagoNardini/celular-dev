@@ -71,7 +71,9 @@ async function sacarNode(sistema, archivo) {
     else {
       // tar.gz: lo abre el tar de cualquier sistema (en Windows, el del sistema: el de Git no siempre)
       const tar = process.platform === 'win32' ? join(process.env.SystemRoot || 'C:/Windows', 'System32', 'tar.exe') : 'tar';
-      const r = spawnSync(tar, ['-xzf', archivo, '-C', temporal], { stdio: 'inherit' });
+      // solo node y la licencia: lo demás trae atajos (npm, npx) que Windows no puede crear
+      const carpetaNode = `node-${nodeVersion}-${sistema.node}`;
+      const r = spawnSync(tar, ['-xzf', archivo, '-C', temporal, `${carpetaNode}/bin/node`, `${carpetaNode}/LICENSE`], { stdio: 'inherit' });
       if (r.status !== 0) throw new Error(`no se pudo abrir ${archivo}`);
     }
     const carpeta = join(temporal, `node-${nodeVersion}-${sistema.node}`);

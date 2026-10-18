@@ -212,6 +212,11 @@ Necesita el celular conectado por USB con la depuración USB activada, y Chrome 
   'adb.noDescomprime': 'no se pudo descomprimir ({programa} terminó con {codigo})',
   'adb.sinDescompresor': 'no encontré cómo descomprimir el ZIP: instalá unzip (por ejemplo: sudo apt install unzip)',
 
+  'consola.pedidoConError': 'Pedido con error {estado}: {url}',
+  'consola.pedidoFallido': 'Pedido fallido: {url} - {motivo}',
+  'consola.bloqueado': 'bloqueado ({motivo})',
+  'consola.cargada': 'Página cargada en el celular.',
+
   'explicar.laPagina': 'la página',
   'explicar.noDefinido': 'Tu página usa `{nombre}`, pero no existe. Revisá si está bien escrito o si falta cargar el archivo donde se define.',
   'explicar.leerVacio': 'Se quiso leer `{propiedad}` de algo que está vacío ({vacio}). Puede que un dato todavía no haya llegado o que un elemento no exista en la página.',
@@ -376,12 +381,12 @@ Necesita el celular conectado por USB con la depuración USB activada, y Chrome 
     'panel.abrirEnEditor': 'Abrir en el editor',
     'panel.actividad': 'Actividad',
     'panel.todaviaNada': 'Todavía nada.',
-    'panel.enVivo': 'en vivo',
-    'panel.manual': 'manual',
+    'panel.enVivo': 'recarga al guardar',
+    'panel.manual': 'recarga manual',
 
     'espejo.titulo': 'Tu celular',
     'espejo.alt': 'La pantalla del celular en vivo. Tocala para usarlo desde acá.',
-    'espejo.ayuda': 'En vivo: tocá, arrastrá o escribí',
+    'espejo.ayuda': 'En vivo: tocalo desde acá',
     'espejo.esperando': 'Esperando la pantalla… Si está apagada, prendela.',
     'espejo.sinPestana': 'Sin conexión con la pestaña',
 

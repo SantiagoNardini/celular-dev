@@ -212,6 +212,11 @@ Needs the phone connected over USB with USB debugging turned on, and Chrome on t
   'adb.noDescomprime': 'could not unzip ({programa} ended with {codigo})',
   'adb.sinDescompresor': 'found no way to unzip the file: install unzip (for example: sudo apt install unzip)',
 
+  'consola.pedidoConError': 'Request failed with {estado}: {url}',
+  'consola.pedidoFallido': 'Request failed: {url} - {motivo}',
+  'consola.bloqueado': 'blocked ({motivo})',
+  'consola.cargada': 'Page loaded on the phone.',
+
   'explicar.laPagina': 'the page',
   'explicar.noDefinido': 'Your page uses `{nombre}`, but it does not exist. Check the spelling, or whether the file that defines it is loaded.',
   'explicar.leerVacio': 'The code tried to read `{propiedad}` from something empty ({vacio}). Some data may not have arrived yet, or an element is missing from the page.',
@@ -376,12 +381,12 @@ Needs the phone connected over USB with USB debugging turned on, and Chrome on t
     'panel.abrirEnEditor': 'Open in editor',
     'panel.actividad': 'Activity',
     'panel.todaviaNada': 'Nothing yet.',
-    'panel.enVivo': 'live',
-    'panel.manual': 'manual',
+    'panel.enVivo': 'reloads on save',
+    'panel.manual': 'manual reload',
 
     'espejo.titulo': 'Your phone',
     'espejo.alt': 'The phone\'s screen, live. Click it to use the phone from here.',
-    'espejo.ayuda': 'Live: tap, drag or type',
+    'espejo.ayuda': 'Live: use it from here',
     'espejo.esperando': 'Waiting for the screen… If it is off, turn it on.',
     'espejo.sinPestana': 'No connection to the tab',
 

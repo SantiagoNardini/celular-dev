@@ -3,6 +3,7 @@
 //   tipo:  excepcion | consola | navegador | http | red | carga
 //   texto: el mensaje técnico, tal como lo da Chrome
 //   dato:  lo que hace falta para explicarlo en simple (la dirección del pedido, el código HTTP...)
+import { t } from './idioma.mjs';
 
 // Saca el origen (http://localhost:5500) de las direcciones: alcanza con la ruta.
 export function corta(url, origen) {
@@ -70,16 +71,16 @@ export class Traductor {
         if (r.status < 400) return null;
         // el navegador pide el ícono solo, en cada carga: que falte no es un error del sitio
         if (r.status === 404 && /\/favicon\.ico(\?|$)/.test(r.url)) return null;
-        return { nivel: r.status >= 500 ? 'error' : 'aviso', tipo: 'http', texto: `Pedido con error ${r.status}: ${corta(r.url, this.origen)}`, donde: '', dato: { url: corta(r.url, this.origen), estado: r.status } };
+        return { nivel: r.status >= 500 ? 'error' : 'aviso', tipo: 'http', texto: t('consola.pedidoConError', { estado: r.status, url: corta(r.url, this.origen) }), donde: '', dato: { url: corta(r.url, this.origen), estado: r.status } };
       }
       case 'Network.loadingFailed': {
         if (p.canceled) return null;
         const url = this.pedidos.get(p.requestId) || '';
-        const motivo = p.blockedReason ? `bloqueado (${p.blockedReason})` : p.errorText;
-        return { nivel: 'error', tipo: 'red', texto: `Pedido fallido: ${corta(url, this.origen)} - ${motivo}`, donde: '', dato: { url: corta(url, this.origen), motivo, bloqueado: !!p.blockedReason } };
+        const motivo = p.blockedReason ? t('consola.bloqueado', { motivo: p.blockedReason }) : p.errorText;
+        return { nivel: 'error', tipo: 'red', texto: t('consola.pedidoFallido', { url: corta(url, this.origen), motivo }), donde: '', dato: { url: corta(url, this.origen), motivo, bloqueado: !!p.blockedReason } };
       }
       case 'Page.loadEventFired':
-        return { nivel: 'log', tipo: 'carga', texto: 'Página cargada en el celular.', donde: '' };
+        return { nivel: 'log', tipo: 'carga', texto: t('consola.cargada'), donde: '' };
       default:
         return null;
     }

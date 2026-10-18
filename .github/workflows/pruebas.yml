@@ -1,0 +1,30 @@
+# Corre las pruebas en Windows, Mac y Linux cada vez que se sube un cambio o se propone uno (pull request).
+# Si alguna falla, GitHub lo marca en rojo y avisa por correo.
+name: Pruebas
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  pruebas:
+    name: ${{ matrix.sistema }} · Node ${{ matrix.node }}
+    runs-on: ${{ matrix.sistema }}
+    strategy:
+      fail-fast: false
+      matrix:
+        sistema: [windows-latest, macos-latest, ubuntu-latest]
+        node: [24]
+        include:
+          # la versión más vieja que se acepta (package.json: engines)
+          - sistema: ubuntu-latest
+            node: 22
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Pruebas
+        working-directory: celular-dev
+        run: npm test
