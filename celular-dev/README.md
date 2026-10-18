@@ -8,7 +8,7 @@ Probá tu sitio en tu **celular Android real** mientras programás en la computa
 - Te muestra **los errores del celular explicados en lenguaje simple**, agrupados, con el detalle técnico y el archivo y la línea (y un botón para abrirlo en el editor).
 - Con un botón arma un **informe para tu IA** (Claude, ChatGPT, Copilot…) con todos los errores, listo para pegar y pedir que los arregle.
 - Un **asistente** te guía para preparar el celular (depuración USB, el aviso de «Permitir»).
-- En **español o inglés** (botón del panel, o `--idioma en`).
+- En **inglés o español**: arranca en inglés; el botón «Español» del panel lo cambia y lo recuerda (o `--idioma es`).
 
 Sin dependencias: solo Node 22 o más nuevo, y ADB (el panel lo descarga con un botón).
 
@@ -58,7 +58,7 @@ Para tener el comando `celular` en cualquier carpeta, una vez dentro de `celular
 | `--manual` | Arranca en modo manual: no recarga al guardar |
 | `--todo` | Muestra también `console.log` e `info`, no solo errores y avisos |
 | `--sin-panel` | Solo terminal: elige solo (tu servidor si hay uno; si no, esta carpeta) |
-| `--idioma <es\|en>` | Idioma del panel y los mensajes. Si no se pasa: el elegido en el panel, o el del sistema |
+| `--idioma <es\|en>` | Idioma del panel y los mensajes. Si no se pasa: el elegido en el panel; si nunca se eligió, inglés |
 
 ### Panel
 

@@ -26,7 +26,7 @@ try {
   console.log(`${error.message}\n${t('ayuda', { puertos: PUERTOS_CONOCIDOS.join(', ') })}`);
   process.exit(1);
 }
-// el idioma: --idioma, o CELULAR_IDIOMA, o el que se eligió en el panel, o el del sistema
+// el idioma: --idioma, o CELULAR_IDIOMA, o el que se eligió en el panel; si no, inglés
 elegirIdioma(opciones.idioma || process.env.CELULAR_IDIOMA || preferencia('idioma'));
 if (opciones.ayuda) { console.log(t('ayuda', { puertos: PUERTOS_CONOCIDOS.join(', ') })); process.exit(0); }
 

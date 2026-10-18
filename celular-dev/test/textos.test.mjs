@@ -6,7 +6,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import es from '../src/textos/es.mjs';
 import en from '../src/textos/en.mjs';
-import { t, elegirIdioma, textosPanel, idiomaDelSistema } from '../src/idioma.mjs';
+import { t, elegirIdioma, textosPanel } from '../src/idioma.mjs';
 
 const programa = join(dirname(fileURLToPath(import.meta.url)), '..');
 const claves = o => Object.keys(o).filter(k => k !== 'panel').sort();
@@ -71,7 +71,8 @@ test('completa los datos, arma plurales y cambia de idioma', () => {
   elegirIdioma('es');
 });
 
-test('un idioma desconocido usa el del sistema', () => {
-  assert.equal(elegirIdioma('fr'), idiomaDelSistema());
+test('sin idioma elegido, o uno desconocido: inglés', () => {
+  assert.equal(elegirIdioma(undefined), 'en');
+  assert.equal(elegirIdioma('fr'), 'en');
   elegirIdioma('es');
 });

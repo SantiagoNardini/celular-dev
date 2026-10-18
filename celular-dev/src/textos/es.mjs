@@ -18,7 +18,7 @@ Las capturas, los informes y el registro quedan en Documentos/celular-dev.
   --manual          no recargar el celular al guardar: recargás vos (tecla R, botón del panel o el celular)
   --todo            mostrar también console.log e info del celular, no solo errores y avisos
   --sin-panel       solo terminal: no abre el panel (elige solo: tu servidor si hay uno, si no esta carpeta)
-  --idioma <es|en>  idioma del panel y los mensajes (si no, el que elegiste en el panel o el del sistema)
+  --idioma <es|en>  idioma del panel y los mensajes (si no, el que elegiste en el panel; si nunca elegiste, inglés)
   --ayuda           esta ayuda
 
 Necesita el celular conectado por USB con la depuración USB activada, y Chrome en el celular.

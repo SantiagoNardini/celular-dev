@@ -6,16 +6,11 @@ import es from './textos/es.mjs';
 import en from './textos/en.mjs';
 
 export const IDIOMAS = { es, en };
-let actual = 'es';
-
-// El idioma del sistema: "es-AR", "es_ES.UTF-8"... cuenta como español; cualquier otro, inglés.
-export function idiomaDelSistema() {
-  const local = process.env.LC_ALL || process.env.LANG || Intl.DateTimeFormat().resolvedOptions().locale || '';
-  return /^es\b|^es[-_]/i.test(local) ? 'es' : 'en';
-}
+// si no se eligió ninguno (o uno que no hay), inglés
+let actual = 'en';
 
 export function elegirIdioma(pedido) {
-  actual = IDIOMAS[pedido] ? pedido : idiomaDelSistema();
+  actual = IDIOMAS[pedido] ? pedido : 'en';
   return actual;
 }
 

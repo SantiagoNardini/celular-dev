@@ -39,7 +39,7 @@ a { color: var(--acento); }
 .pastilla.alerta { background: var(--alerta-fondo); color: var(--alerta); }
 .pastilla.peligro { background: var(--peligro-fondo); color: var(--peligro); }
 
-main { max-width: 980px; margin: 0 auto; padding: 28px 24px 60px; }
+main { max-width: 1240px; margin: 0 auto; padding: 28px 24px 60px; }
 .nota { color: var(--texto-2); font-size: 14px; }
 .sub { color: var(--texto-2); font-size: 14px; margin-bottom: 20px; }
 .tarjeta { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 12px; padding: 18px 20px; }
@@ -80,8 +80,9 @@ details ol { margin: 10px 0 0; padding-left: 20px; color: var(--texto-2); }
 .dialogo-falso b { font-weight: 500; display: block; margin-bottom: 4px; }
 .dialogo-falso .acciones { display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px; }
 /* Espejo: la pantalla del celular en vivo, que se puede tocar */
-.telefono.espejo { width: 250px; }
-.telefono.espejo .pantalla { position: relative; min-height: 420px; place-items: stretch; }
+/* grande, para leer el sitio y tocarlo cómodo: ocupa todo el ancho de su columna */
+.telefono.espejo { width: 100%; max-width: 400px; border-radius: 34px; padding: 14px 11px; }
+.telefono.espejo .pantalla { position: relative; min-height: 640px; place-items: stretch; border-radius: 16px; }
 .telefono.espejo img { width: 100%; display: block; cursor: pointer; touch-action: none; user-select: none; -webkit-user-drag: none; }
 .telefono.espejo img:not([src]) { display: none; }
 .telefono.espejo img:focus-visible { outline: 2px solid var(--acento); outline-offset: -2px; }
@@ -90,7 +91,10 @@ details ol { margin: 10px 0 0; padding-left: 20px; color: var(--texto-2); }
 .pie-telefono { text-align: center; color: var(--texto-3); font-size: 12px; margin-top: 8px; }
 
 /* Panel */
-.tablero { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 24px; align-items: start; }
+.tablero { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 28px; align-items: start; }
+/* el celular se queda a la vista mientras se baja por los errores */
+.tablero > div:last-child { position: sticky; top: 16px; }
+@media (max-width: 1100px) { .tablero { grid-template-columns: minmax(0, 1fr) 320px; } .telefono.espejo .pantalla { min-height: 520px; } }
 .metricas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
 .metrica { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: var(--radio); padding: 10px 12px; min-width: 0; }
 .metrica p:first-child { font-size: 12px; color: var(--texto-2); }
@@ -139,6 +143,8 @@ details ol { margin: 10px 0 0; padding-left: 20px; color: var(--texto-2); }
 
 @media (max-width: 720px) {
   .asistente, .tablero { grid-template-columns: 1fr; }
+  .tablero > div:last-child { position: static; }
+  .telefono.espejo { margin: 0 auto; }
   .metricas { grid-template-columns: 1fr 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }

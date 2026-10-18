@@ -120,7 +120,7 @@ export class Chrome extends EventEmitter {
 
   // Chrome manda un cuadro y no manda el siguiente hasta que se le avisa que llegó: avisando un rato
   // después, se limita a unos 12 cuadros por segundo (alcanza para seguirlo y no recalienta nada).
-  iniciarEspejo({ ancho = 540, alto = 1200, calidad = 60 } = {}) {
+  iniciarEspejo({ ancho = 800, alto = 1800, calidad = 65 } = {}) {
     return this.enviar('Page.startScreencast', { format: 'jpeg', quality: calidad, maxWidth: ancho, maxHeight: alto, everyNthFrame: 1 });
   }
 

@@ -18,7 +18,7 @@ Screenshots, reports and the log are saved in Documents/celular-dev.
   --manual          don't reload the phone on save: you reload (R key, panel button or the phone)
   --todo            also show console.log and info from the phone, not just errors and warnings
   --sin-panel       terminal only: no panel (picks on its own: your server if there is one, else this folder)
-  --idioma <es|en>  language for the panel and messages (otherwise the one chosen in the panel, or the system's)
+  --idioma <es|en>  language for the panel and messages (otherwise the one chosen in the panel; English if never chosen)
   --ayuda           this help
 
 Needs the phone connected over USB with USB debugging turned on, and Chrome on the phone.
