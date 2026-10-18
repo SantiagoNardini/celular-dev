@@ -52,6 +52,7 @@ export class AdbSimulado extends EventEmitter {
   async quitarForward(puerto) { this.forwards.delete(puerto); }
 
   vigilar() {}
+  async consultarUnaVez() { this.consultas = (this.consultas || 0) + 1; }
 
   // lo que en el de verdad avisa "adb track-devices": device, unauthorized, sin-celular...
   cambiar(estado) {

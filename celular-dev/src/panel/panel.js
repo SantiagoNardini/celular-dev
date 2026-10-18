@@ -22,6 +22,8 @@ const rutaCorta = ruta => {
 // `código` en los mensajes simples se muestra como código
 const conCodigo = t => esc(t).replace(/`([^`]+)`/g, '<code>$1</code>');
 const nombreRed = red => tr(`red.${red}`);
+// lo mismo, pero sin escapar: para el portapapeles y los avisos del sistema, que no son HTML
+const trSin = (clave, datos = {}) => (textos && textos[clave] != null ? textos[clave] : clave).replace(/\{(\w+)\}/g, (_, k) => datos[k]);
 
 // Íconos de línea (dibujados acá, sin archivos aparte), del color del texto que los rodea.
 const ICONOS = {
@@ -41,7 +43,9 @@ const ICONOS = {
   copiar: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
   tilde: '<path d="m20 6-11 11-5-5"/>',
   globo: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
-  limpiar: '<path d="M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/>'
+  limpiar: '<path d="M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/>',
+  campana: '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+  campanaNo: '<path d="M13.73 21a2 2 0 0 1-3.46 0M18.63 13A17.9 17.9 0 0 1 18 8M6.26 6.26A5.9 5.9 0 0 0 6 8c0 7-3 9-3 9h14M18 8a6 6 0 0 0-9.33-5"/><path d="m1 1 22 22"/>'
 };
 const ic = nombre => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONOS[nombre]}</svg>`;
 
@@ -86,6 +90,12 @@ document.addEventListener('click', e => {
     if (url) navigator.clipboard.writeText(url).then(() => avisar(tr('espejo.copiada'))).catch(() => avisar(url));
     return;
   }
+  if (boton && boton.dataset.accion === 'copiar-error') {
+    const a = estado && estado.avisos.find(x => x.id === boton.dataset.valor);
+    if (a) navigator.clipboard.writeText(textoParaLaIa(a)).then(() => avisar(tr('errores.copiado'))).catch(() => avisar(tr('toast.informeGuardado', { archivo: '' }), true));
+    return;
+  }
+  if (boton && boton.dataset.accion === 'avisos') { alternarAvisos(); return; }
   if (boton && !boton.classList.contains('ocupado')) accion(boton.dataset.accion, boton.dataset.valor, boton);
 });
 document.addEventListener('toggle', e => { if (e.target.id === 'ayuda') ayudaAbierta = e.target.open; }, true);
@@ -111,6 +121,63 @@ function dibujarCabecera() {
   const cerrar = document.getElementById('cerrar');
   cerrar.textContent = tr('cabecera.cerrar');
   cerrar.title = tr('cabecera.cerrarTitulo');
+  dibujarBotonAvisos();
+}
+
+// ---------- Avisos del sistema ----------
+// Si el celular se desconecta, el servidor se apaga o aparece un error grave mientras esta ventana está tapada o
+// en segundo plano, el sistema muestra un aviso. Son las notificaciones del navegador: se piden una vez.
+
+const hayAvisos = () => 'Notification' in window;
+function avisosActivados() {
+  try { return hayAvisos() && Notification.permission === 'granted' && localStorage.getItem('avisos') === '1'; } catch { return false; }
+}
+
+function dibujarBotonAvisos() {
+  const boton = document.getElementById('avisos');
+  if (!boton) return;
+  boton.hidden = !hayAvisos();
+  const activos = avisosActivados();
+  boton.innerHTML = ic(activos ? 'campana' : 'campanaNo');
+  boton.classList.toggle('activa', activos);
+  boton.setAttribute('aria-pressed', String(activos));
+  boton.title = tr('cabecera.avisosTitulo');
+  boton.setAttribute('aria-label', tr('cabecera.avisos'));
+}
+
+async function alternarAvisos() {
+  if (!hayAvisos()) return;
+  try {
+    if (avisosActivados()) { localStorage.setItem('avisos', '0'); avisar(tr('avisos.desactivados')); }
+    else {
+      const permiso = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
+      if (permiso !== 'granted') { avisar(tr('avisos.bloqueados'), true); return; }
+      localStorage.setItem('avisos', '1');
+      avisar(tr('avisos.activados'));
+    }
+  } catch { avisar(tr('avisos.bloqueados'), true); }
+  dibujarBotonAvisos();
+}
+
+// Compara con el estado anterior: cuando cambia algo grave y nadie está mirando el panel, avisa.
+let anterior = null;
+function avisarDelSistema() {
+  const antes = anterior;
+  anterior = { fase: estado.fase, celular: estado.pasos.celular, servidorOk: estado.servidorOk, errores: estado.errores };
+  if (!antes || antes.fase !== 'corriendo' || estado.fase !== 'corriendo' || !avisosActivados()) return;
+  if (document.visibilityState === 'visible' && document.hasFocus()) return;
+  let texto = null;
+  if (antes.celular === 'ok' && estado.pasos.celular !== 'ok') texto = trSin('avisos.desconectado');
+  else if (antes.servidorOk && !estado.servidorOk) texto = trSin('avisos.servidor');
+  else if (estado.errores > antes.errores) {
+    const grave = estado.avisos.find(a => a.nivel === 'error');
+    if (grave) texto = trSin('avisos.error', { texto: grave.simple.replace(/`/g, '') });
+  }
+  if (!texto) return;
+  try {
+    const n = new Notification('celular-dev', { body: texto, tag: 'celular-dev', icon: '/icono.png' });
+    n.onclick = () => { window.focus(); n.close(); };
+  } catch { /* sin permiso o sin soporte: queda el aviso del panel */ }
 }
 
 // ---------- Inicio ----------
@@ -246,12 +313,19 @@ function vistaAsistente() {
 function vistaPanel() {
   const s = estado;
   const modoTexto = s.modo === 'live-server' ? tr('panel.liveServerRecarga') : s.modo === 'vivo' ? tr('panel.pasarAManual') : tr('panel.pasarAVivo');
+  // los que pasaron en la carga actual son nuevos; los de antes de recargar quedan atenuados (si hay de las dos)
+  const hayViejos = s.avisos.some(a => a.ronda < s.ronda);
   const errores = s.avisos.length
-    ? s.avisos.map(a => `<div class="item ${a.nivel}"><span class="punto" aria-hidden="true"></span><div class="cuerpo">
-        <p class="simple">${conCodigo(a.simple)}</p>
+    ? s.avisos.map(a => {
+        const vieja = a.ronda < s.ronda;
+        const marca = vieja ? `<span class="marca-ronda vieja">${tr('errores.anterior')}</span>` : hayViejos ? `<span class="marca-ronda nueva">${tr('errores.nuevo')}</span>` : '';
+        return `<div class="item ${a.nivel}${vieja ? ' vieja' : ''}"><span class="punto" aria-hidden="true"></span><div class="cuerpo">
+        <p class="simple">${marca}${conCodigo(a.simple)}</p>
         <p class="tecnico">${esc(a.texto)}${a.donde ? ' · ' + esc(a.donde) : ''} · ${esc(a.ultima)}</p>
-        ${a.abrible ? `<button class="enlace" data-accion="abrir-codigo" data-valor="${esc(a.id)}">${tr('panel.abrirEnEditor')}</button>` : ''}</div>
-        ${a.veces > 1 ? `<span class="veces">×${a.veces}</span>` : ''}</div>`).join('')
+        <div class="enlaces">${a.abrible ? `<button class="enlace" data-accion="abrir-codigo" data-valor="${esc(a.id)}">${tr('panel.abrirEnEditor')}</button>` : ''}
+        <button class="enlace" data-accion="copiar-error" data-valor="${esc(a.id)}">${tr('errores.copiar')}</button></div></div>
+        ${a.veces > 1 ? `<span class="veces">×${a.veces}</span>` : ''}</div>`;
+      }).join('')
     : `<p class="vacio">${tr('panel.sinErrores')}</p>`;
   const actividad = s.actividad.length
     ? s.actividad.map(a => `<div class="item ${a.nivel}"><span class="punto" aria-hidden="true"></span><div class="cuerpo"><p class="simple">${conCodigo(a.texto)}</p><p class="tecnico">${esc(a.hora)}</p></div></div>`).join('')
@@ -289,6 +363,7 @@ function vistaPanel() {
         <p class="simple">${conCodigo(p.simple)}</p>${p.ejemplos.length ? `<p class="tecnico">${p.ejemplos.map(esc).join(' · ')}</p>` : ''}</div></div>`).join(''),
     errores: `<h2>${tr('panel.erroresTitulo')} ${s.avisos.length ? `<span class="cuenta">${s.avisos.length}</span><button class="chico fantasma" data-accion="limpiar">${ic('limpiar')}${tr('panel.limpiar')}</button>` : ''}</h2>${errores}`,
     actividad: `<h2>${tr('panel.actividad')}</h2>${actividad}`,
+    problema: avisoProblema(s),
     desactualizado: avisoDesactualizado(s),
     tamano: selectorTamano(s),
     bienvenida: s.primerExito && s.espejo ? `<section class="tarjeta bienvenida">
@@ -306,6 +381,27 @@ function vistaPanel() {
       </div>
       <p class="estado-espejo">${s.espejo ? `<span class="vivo">${tr('espejo.enVivo')}</span> · ${tr('espejo.ayuda')}` : tr('espejo.titulo')} · ${modo}${s.red !== 'normal' ? ` · <b class="alerta-texto">${tr('panel.red')} ${nombreRed(s.red)}</b>` : ''}</p>`
   };
+}
+
+// Cuando algo falla (el celular, el servidor o la pestaña de Chrome): qué pasa y un solo botón para arreglarlo.
+function avisoProblema(s) {
+  const p = s.pasos.celular === 'unauthorized' ? [tr('problema.permitirTitulo'), tr('problema.permitirTexto'), tr('problema.permitirBoton')]
+    : s.pasos.celular !== 'ok' ? [tr('problema.celularTitulo'), tr('problema.celularTexto'), tr('problema.celularBoton')]
+    : !s.servidorOk ? [tr('problema.servidorTitulo'), tr('problema.servidorTexto', { url: s.sitio.url }), tr('problema.servidorBoton')]
+    : !s.consola ? [tr('problema.pestanaTitulo'), tr('problema.pestanaTexto'), tr('problema.pestanaBoton')]
+    : null;
+  if (!p) return '';
+  return `<div class="banda problema" role="alert"><div><b>${p[0]}</b><p>${p[1]}</p></div><button class="principal chico" data-accion="arreglar">${p[2]}</button></div>`;
+}
+
+// El texto de un error para pegarle a una IA: qué pasó, dónde y qué se espera que haga.
+function textoParaLaIa(a) {
+  const lineas = [trSin('ia.intro', { sitio: estado.sitio.url, celular: estado.celular.modelo || 'Android' }), '',
+    trSin('ia.problema', { texto: a.simple.replace(/`/g, '') }), trSin('ia.tecnico', { texto: a.texto })];
+  if (a.donde) lineas.push(trSin('ia.donde', { donde: a.donde }));
+  if (a.veces > 1) lineas.push(trSin('ia.veces', { veces: a.veces }));
+  lineas.push('', trSin('ia.cierre'));
+  return lineas.join('\n');
 }
 
 // Si el celular no muestra lo último que se guardó: un aviso, con el botón para recargar.
@@ -346,6 +442,7 @@ function direccionDelCelular(s) {
 // está en el esqueleto: así la imagen en vivo no se corta cada vez que cambia algo.
 const ESQUELETOS = {
   corriendo: `<div data-zona="oferta"></div><div class="tablero"><div>
+      <div data-zona="problema"></div>
       <div data-zona="desactualizado"></div>
       <div data-zona="bienvenida"></div>
       <div class="metricas" data-zona="metricas"></div>
@@ -400,11 +497,8 @@ function dibujar() {
 }
 
 // ---------- Espejo ----------
-// La imagen se conecta solo mientras todo anda y esta pestaña se ve: en otra pestaña o minimizada, se
-// suelta, y el celular deja de mandar cuadros.
-
-// ---------- Espejo ----------
-// Las imágenes llegan por un flujo (multipart) que se lee acá y se dibuja en un <canvas> apenas llega cada una.
+// Se conecta solo mientras todo anda y esta pestaña se ve: en otra pestaña o minimizada, se suelta y el celular
+// deja de mandar cuadros. Las imágenes llegan por un flujo (multipart) que se lee acá y se dibuja en un <canvas> apenas llega cada una.
 // Un <img> con ese mismo flujo muestra cada imagen recién cuando empieza la siguiente (medido en Chrome): con
 // la pantalla quieta, la última no se vería nunca, y las demás llegarían una imagen tarde. Acá se dibuja
 // siempre la más nueva, y si llegan varias juntas, solo la última.
@@ -649,6 +743,7 @@ function conectar() {
   fuente.onmessage = async e => {
     estado = JSON.parse(e.data);
     try { await cargarTextos(estado.idioma); } catch { idiomaCargado = null; return; }
+    avisarDelSistema();
     dibujar();
   };
   fuente.onerror = () => {

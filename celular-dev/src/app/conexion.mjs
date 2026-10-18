@@ -124,8 +124,11 @@ export function escucharChrome(app, alCuadro) {
   const { chrome } = app;
   chrome.on('evento', (metodo, params) => {
     // la página que tiene abierta el celular: cambia al navegar, y también al cambiar el # o con pushState
-    if (metodo === 'Page.frameNavigated' && params.frame && !params.frame.parentId) recordarPagina(app, params.frame.url + (params.frame.urlFragment || ''));
-    else if (metodo === 'Page.navigatedWithinDocument') recordarPagina(app, params.url);
+    if (metodo === 'Page.frameNavigated' && params.frame && !params.frame.parentId) {
+      app.estado.ronda++;   // la página cargó de nuevo: lo que falle desde acá es nuevo
+      recordarPagina(app, params.frame.url + (params.frame.urlFragment || ''));
+      cambio(app);
+    } else if (metodo === 'Page.navigatedWithinDocument') recordarPagina(app, params.url);
     const aviso = app.traductor.traducir(metodo, params);
     if (aviso && aviso.tipo === 'carga') { alCargar(app); return; }   // el celular terminó de cargar la página
     if (!aviso) return;

@@ -38,7 +38,8 @@ export function estadoInicial({ carpetaProyecto, esProyecto, manual }) {
     revisando: false,
     recargas: 0,
     errores: 0,
-    avisos: [],                        // errores y avisos del celular, agrupados, el último arriba
+    ronda: 0,                          // cuántas veces cargó la página el celular: separa los errores nuevos de los de antes de recargar
+    avisos: [],                        // errores y avisos del celular, agrupados, el último arriba (ronda: en qué carga pasó por última vez)
     actividad: []                      // lo que hizo el programa: guardados, recargas, conexiones
   };
 }
@@ -78,9 +79,10 @@ export function registrarAviso(app, aviso) {
   if (grupo) {
     grupo.veces++;
     grupo.ultima = ui.hora();
+    grupo.ronda = estado.ronda;
     estado.avisos = [grupo, ...estado.avisos.filter(a => a !== grupo)];
   } else {
-    grupo = { id: clave, clave, nivel: aviso.nivel, tipo: aviso.tipo, simple, texto: aviso.texto, donde: aviso.donde, abrible: !!(aviso.donde && /:\d+/.test(aviso.donde)), veces: 1, ultima: ui.hora() };
+    grupo = { id: clave, clave, nivel: aviso.nivel, tipo: aviso.tipo, simple, texto: aviso.texto, donde: aviso.donde, abrible: !!(aviso.donde && /:\d+/.test(aviso.donde)), veces: 1, ultima: ui.hora(), ronda: estado.ronda };
     estado.avisos.unshift(grupo);
     if (estado.avisos.length > 100) estado.avisos.length = 100;
   }

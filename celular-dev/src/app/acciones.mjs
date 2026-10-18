@@ -189,6 +189,33 @@ async function cambiarSitio(app) {
   await llevarSitioAlCelular(app);
 }
 
+// Un solo botón para lo que falla: según qué sea (el celular, el servidor o la pestaña de Chrome), hace lo que
+// la persona haría a mano, y si no alcanza dice qué falta.
+async function arreglar(app) {
+  const { estado, adb } = app;
+  if (estado.fase !== 'corriendo') return { error: t('accion.noListo') };
+  if (estado.pasos.celular !== 'ok') {
+    // se le pregunta de nuevo a ADB; si el celular volvió, el aviso de ADB dispara la reconexión
+    if (adb.consultarUnaVez) await adb.consultarUnaVez().catch(() => {});
+    if (estado.pasos.celular === 'ok') return { mensaje: t('arreglar.celularVolvio') };
+    return { error: estado.pasos.celular === 'unauthorized' ? t('arreglar.sinPermitir') : t('arreglar.celularSigue') };
+  }
+  if (!estado.servidorOk) {
+    if (!(await app.deps.servidores.puertoAbierto(app.sitio.puerto))) return { error: t('arreglar.servidorSigue', { url: app.sitio.url }) };
+    estado.servidorOk = true;
+    contar(app, 'ok', t('arranque.servidorVolvio'));
+    recargar(app);
+    return { mensaje: t('arreglar.servidorVolvio') };
+  }
+  if (!estado.consola || !app.chrome.conectado) {
+    if (!(await abrirEnCelular(app))) return { error: t('arreglar.noAbre') };
+    if (!(await conectarConsola(app))) return { error: t('arreglar.sinPestana') };
+    contar(app, 'ok', t('arreglar.listo'));
+    return { mensaje: t('arreglar.listo') };
+  }
+  return { mensaje: t('arreglar.nada') };
+}
+
 function cambiarIdioma(app, valor) {
   const nuevo = elegirIdioma(valor);
   guardarPreferencia('idioma', nuevo);
@@ -308,6 +335,7 @@ export async function alAccion(app, accion, valor) {
       await app.chrome.atras().catch(() => {});
       return {};
     case 'idioma': return cambiarIdioma(app, valor);
+    case 'arreglar': return arreglar(app);
     case 'abrir':
       if (estado.fase !== 'corriendo') return { error: t('accion.noListo') };
       if (await abrirEnCelular(app)) await conectarConsola(app);

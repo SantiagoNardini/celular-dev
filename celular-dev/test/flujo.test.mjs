@@ -140,6 +140,67 @@ test('los errores del celular se explican, se agrupan y llegan al informe', asyn
   await p.terminado;
 });
 
+test('los errores de antes de recargar se separan de los nuevos, sin tener que limpiar a mano', async () => {
+  const p = armar({ opciones: { carpeta: carpetaSitio } });
+  await arrancarHastaCorrer(p);
+  const cargar = () => p.chrome.evento('Page.frameNavigated', { frame: { url: p.app.sitio.url } });
+  cargar();
+  p.chrome.evento('Runtime.exceptionThrown', excepcion('ReferenceError: viejo is not defined'));
+  const [viejo] = p.estado.avisos;
+  assert.equal(viejo.ronda, p.estado.ronda);
+  // la página recarga: lo que falle desde ahora es de otra ronda
+  cargar();
+  p.chrome.evento('Runtime.exceptionThrown', excepcion('ReferenceError: nuevo is not defined'));
+  const nuevo = p.estado.avisos.find(a => /nuevo/.test(a.texto));
+  assert.equal(nuevo.ronda, p.estado.ronda);
+  assert.ok(viejo.ronda < p.estado.ronda, 'el de antes de recargar tiene que quedar atrás');
+  // si el mismo error vuelve a pasar después de recargar, es nuevo otra vez
+  p.chrome.evento('Runtime.exceptionThrown', excepcion('ReferenceError: viejo is not defined'));
+  assert.equal(viejo.ronda, p.estado.ronda);
+  assert.equal(viejo.veces, 2);
+  // navegar dentro de la misma página (el # o pushState) no cuenta como recarga
+  const ronda = p.estado.ronda;
+  p.chrome.evento('Page.navigatedWithinDocument', { url: `${p.app.sitio.url}#seccion` });
+  assert.equal(p.estado.ronda, ronda);
+  await p.app.salir(0);
+  await p.terminado;
+});
+
+test('un solo botón para arreglar lo que falla: el celular, el servidor o la pestaña de Chrome', async () => {
+  const servidor = createServer((_, r) => r.end('<!doctype html><h1>Servidor</h1>'));
+  await new Promise(r => servidor.listen(0, '127.0.0.1', r));
+  const puerto = servidor.address().port;
+  const p = armar({ opciones: { puerto: String(puerto) }, deps: { servidores: { conocidos: [], puertoAbierto, detectar } } });
+  await arrancarHastaCorrer(p);
+  assert.match((await accion('arreglar')).mensaje, /nada que arreglar/);
+
+  // la pestaña de Chrome se cerró: lo abre de nuevo y se conecta
+  p.chrome.pestanas.length = 0;
+  p.chrome.perderPestana();
+  const abiertas = p.adb.abiertas.length;
+  assert.match((await accion('arreglar')).mensaje, /Chrome abierto y conectado/);
+  assert.equal(p.adb.abiertas.length, abiertas + 1);
+  assert.equal(p.estado.consola, true);
+
+  // el servidor se apagó: mientras siga apagado, dice qué hacer; cuando vuelve, lo toma y recarga
+  await new Promise(r => servidor.close(r));
+  await hasta(() => p.estado.servidorOk === false, { que: 'notar que se cayó' });
+  assert.match((await accion('arreglar')).error, new RegExp(`sigue apagado`));
+  await new Promise(r => servidor.listen(puerto, '127.0.0.1', r));
+  await hasta(() => p.estado.servidorOk === true, { que: 'volver' });
+
+  // el celular se desconectó: pregunta de nuevo a ADB y explica qué falta
+  p.adb.cambiar('sin-celular');
+  assert.match((await accion('arreglar')).error, /Sigo sin ver el celular/);
+  assert.ok(p.adb.consultas >= 1, 'tiene que volver a preguntarle a ADB');
+  p.adb.cambiar('unauthorized');
+  assert.match((await accion('arreglar')).error, /Permitir/);
+
+  await p.app.salir(0);
+  await p.terminado;
+  servidor.close();
+});
+
 test('al guardar recarga el celular; en modo manual, no', async () => {
   const p = armar({ opciones: { carpeta: carpetaSitio } });
   await arrancarHastaCorrer(p);

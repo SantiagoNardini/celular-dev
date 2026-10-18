@@ -53,7 +53,7 @@ test('cada texto que usa el programa existe', () => {
 
 test('cada texto que usa el panel existe, y son solo cadenas (viajan al navegador)', () => {
   const panel = readFileSync(join(programa, 'src', 'panel', 'panel.js'), 'utf8');
-  const faltan = [...usadas(panel, 'tr')].filter(c => !(c in es.panel));
+  const faltan = [...usadas(panel, 'tr'), ...usadas(panel, 'trSin')].filter(c => !(c in es.panel));
   assert.deepEqual(faltan, []);
   for (const [k, v] of Object.entries(es.panel)) assert.equal(typeof v, 'string', k);
   for (const [k, v] of Object.entries(en.panel)) assert.equal(typeof v, 'string', k);
