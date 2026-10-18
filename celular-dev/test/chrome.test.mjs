@@ -37,6 +37,34 @@ test('cada cuadro se avisa enseguida, aunque lleguen seguidos', () => {
   assert.deepEqual(avisos, [1, 2, 3]);
 });
 
+test('el espejo arranca con calidad 80, y la captura nítida pide JPEG 92 a resolución completa', async () => {
+  const chrome = new Chrome(0);
+  const pedidos = [];
+  chrome.enviar = async (metodo, params) => {
+    pedidos.push([metodo, params]);
+    if (metodo === 'Page.getLayoutMetrics') return { cssVisualViewport: { pageX: 0, pageY: 500, clientWidth: 411.43, clientHeight: 773.14 } };
+    return { data: Buffer.from('jpg').toString('base64') };
+  };
+  await chrome.iniciarEspejo();
+  assert.equal(pedidos[0][0], 'Page.startScreencast');
+  assert.equal(pedidos[0][1].quality, 80);
+  assert.equal((await chrome.capturaNitida()).toString(), 'jpg');
+  // recortada a la parte visible de la página (donde está desplazada), a escala 1: la resolución del celular
+  assert.deepEqual(pedidos.at(-1), ['Page.captureScreenshot', { format: 'jpeg', quality: 92, optimizeForSpeed: true, clip: { x: 0, y: 500, width: 411.43, height: 773.14, scale: 1 } }]);
+});
+
+test('si no hay medidas de la página, la captura nítida va sin recorte', async () => {
+  const chrome = new Chrome(0);
+  let ultima;
+  chrome.enviar = async (metodo, params) => {
+    if (metodo === 'Page.getLayoutMetrics') throw new Error('no contesta');
+    ultima = params;
+    return { data: Buffer.from('jpg').toString('base64') };
+  };
+  assert.equal((await chrome.capturaNitida()).toString(), 'jpg');
+  assert.equal(ultima.clip, undefined);
+});
+
 test('la captura pide el PNG rápido', async () => {
   const chrome = new Chrome(0);
   let pedido;

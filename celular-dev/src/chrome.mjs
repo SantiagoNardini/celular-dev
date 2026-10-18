@@ -122,7 +122,7 @@ export class Chrome extends EventEmitter {
   // Chrome manda un cuadro y no manda el siguiente hasta que se le avisa que llegó. Se avisa enseguida:
   // así la imagen que muestra el resultado de un toque sale apenas está. El celular mismo pone el
   // límite (unos 25 por segundo en un moto g24), y sin cambios en la pantalla no manda nada.
-  iniciarEspejo({ ancho = 540, alto = 1215, calidad = 60 } = {}) {
+  iniciarEspejo({ ancho = 540, alto = 1215, calidad = 80 } = {}) {
     return this.enviar('Page.startScreencast', { format: 'jpeg', quality: calidad, maxWidth: ancho, maxHeight: alto, everyNthFrame: 1 });
   }
 
@@ -152,6 +152,20 @@ export class Chrome extends EventEmitter {
   // Atrás, como el botón del celular
   atras() {
     return this.evaluar('history.back()');
+  }
+
+  // Una captura a la resolución completa del celular y con poca compresión: es la imagen "nítida" que se
+  // manda cuando la pantalla se queda quieta (en un moto g24, unos 330 ms y 110 kB). Se recorta a la parte
+  // visible de la página, igual que las imágenes del espejo: sin recorte, Chrome incluye 56 px de más abajo,
+  // la imagen cambiaría de alto al intercambiarlas y los toques caerían corridos.
+  async capturaNitida() {
+    const params = { format: 'jpeg', quality: 92, optimizeForSpeed: true };
+    try {
+      const { cssVisualViewport: v } = await this.enviar('Page.getLayoutMetrics');
+      if (v && v.clientWidth > 0 && v.clientHeight > 0) params.clip = { x: v.pageX, y: v.pageY, width: v.clientWidth, height: v.clientHeight, scale: 1 };
+    } catch { /* sin medidas, la captura va sin recorte */ }
+    const r = await this.enviar('Page.captureScreenshot', params, 15000);
+    return Buffer.from(r.data, 'base64');
   }
 
   escribir(texto) {

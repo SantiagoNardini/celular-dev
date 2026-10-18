@@ -45,7 +45,7 @@ function armar({ opciones = {}, deps = {} } = {}) {
       opciones,
       ui: uiCallada,
       cwd: temporal,
-      tiempos: { opciones: 50, servidor: 60, reintento: 50, pestana: 10, adb: 30, chrome: 30 },
+      tiempos: { opciones: 50, servidor: 60, reintento: 50, pestana: 10, adb: 30, chrome: 30, nitido: 40 },
       deps: {
         buscarAdb: () => 'adb-simulado',
         crearAdb: () => adb,
@@ -253,6 +253,60 @@ test('el espejo pide imágenes del ancho en que se muestran, y cambia si otro pa
   await hasta(() => p.chrome.pedidosEspejo.length === 4);
   assert.equal(p.chrome.pedidosEspejo[3].ancho, 540);
   sinDato.destroy();
+  await p.app.salir(0);
+  await p.terminado;
+});
+
+test('el espejo manda una imagen nítida cuando la pantalla se queda quieta, sin que el eco la pise', async () => {
+  const p = armar({ opciones: { carpeta: carpetaSitio } });
+  await arrancarHastaCorrer(p);
+  const recibido = [];
+  const pedido = request(`${PANEL}/api/espejo.mjpg`, { headers: { Host: `localhost:${process.env.CELULAR_PUERTO_PANEL}` } });
+  const respuesta = await new Promise((resolver, rechazar) => { pedido.on('response', resolver); pedido.on('error', rechazar); pedido.end(); });
+  respuesta.on('data', d => recibido.push(d));
+  await hasta(() => p.chrome.espejo);
+  const espera = ms => new Promise(r => setTimeout(r, ms));
+  const todo = () => Buffer.concat(recibido);
+  const NITIDO = Buffer.from([0xff, 0xd8, 0xaa, 0xff, 0xd9]);
+  const nitidos = () => { let n = 0, i = -1; while ((i = todo().indexOf(NITIDO, i + 1)) !== -1) n++; return n; };
+  const liviano = n => Buffer.from([0xff, 0xd8, n, n, n, 0xff, 0xd9]);
+
+  // la pantalla cambia y se queda quieta: llega la nítida
+  p.chrome.cuadro(liviano(1));
+  await hasta(() => nitidos() === 1, { que: 'la imagen nítida' });
+  assert.ok(todo().lastIndexOf(NITIDO) > todo().lastIndexOf(liviano(1)), 'la nítida va después de la liviana');
+
+  // el eco (el mismo cuadro liviano otra vez, como lo manda Chrome después de cada captura): no se reenvía
+  // ni dispara otra captura
+  const largo = todo().length;
+  p.chrome.cuadro(liviano(1));
+  await espera(150);
+  assert.equal(todo().length, largo);
+  assert.equal(p.chrome.nitidas, 1);
+
+  // un cambio real: se manda, y después se vuelve a afinar
+  p.chrome.cuadro(liviano(2));
+  await hasta(() => nitidos() === 2, { que: 'afinar el cambio' });
+  assert.ok(todo().includes(liviano(2)));
+
+  // si cambia mientras se saca la nítida, esa ya es vieja: se descarta y se saca otra
+  p.chrome.demoraNitida = 120;
+  p.chrome.cuadro(liviano(3));
+  await espera(70);
+  p.chrome.cuadro(liviano(4));
+  await hasta(() => nitidos() === 3, { que: 'la nítida del último cambio' });
+  await espera(250);
+  assert.equal(nitidos(), 3, 'la nítida vieja no tiene que llegar');
+  assert.equal(p.chrome.nitidas, 4);
+  assert.ok(todo().lastIndexOf(NITIDO) > todo().lastIndexOf(liviano(4)));
+
+  // sin nadie mirando no se saca nada
+  respuesta.destroy();
+  await hasta(() => !p.chrome.espejo);
+  const hechas = p.chrome.nitidas;
+  p.chrome.cuadro(liviano(5));
+  await espera(150);
+  assert.equal(p.chrome.nitidas, hechas);
   await p.app.salir(0);
   await p.terminado;
 });

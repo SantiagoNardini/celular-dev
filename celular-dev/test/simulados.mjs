@@ -113,6 +113,11 @@ export class ChromeSimulado extends EventEmitter {
 
   async red(perfil) { this.redes.push(perfil); }
   async captura() { return Buffer.from('89504e470d0a1a0a', 'hex'); }
+  async capturaNitida() {
+    this.nitidas = (this.nitidas || 0) + 1;
+    if (this.demoraNitida) await new Promise(r => setTimeout(r, this.demoraNitida));
+    return Buffer.from([0xff, 0xd8, 0xaa, 0xff, 0xd9]);
+  }
   async iniciarEspejo(opciones) { this.espejo = true; this.pedidosEspejo = [...(this.pedidosEspejo || []), opciones]; }
   detenerEspejo() { this.espejo = false; return Promise.resolve(); }
   async tocar(tipo, x, y, momento) { this.toques.push([tipo, x, y]); this.momentos = [...(this.momentos || []), momento]; }

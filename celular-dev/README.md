@@ -76,7 +76,7 @@ Para tener el comando `celular` en cualquier carpeta, una vez dentro de `celular
 | Cambiar qué mostrar | Vuelve al inicio para elegir otra carpeta o servidor |
 | English / Español | Cambia el idioma (y lo recuerda) |
 
-El espejo solo trabaja mientras mirás el panel: con la pestaña en segundo plano o minimizada, el celular deja de mandar imágenes.
+El espejo solo trabaja mientras mirás el panel: con la pestaña en segundo plano o minimizada, el celular deja de mandar imágenes. Mientras tocás o deslizás recibe imágenes livianas y rápidas; cuando la pantalla se queda quieta (unos 0,3 s), llega una imagen nítida a la resolución completa del celular, que se lee mucho mejor.
 
 ### Teclas en la terminal
 

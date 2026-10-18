@@ -43,7 +43,7 @@ export function crearApp({ opciones = {}, cwd = process.cwd(), deps = {}, tiempo
       servidores: { conocidos: PUERTOS_CONOCIDOS, puertoAbierto, detectar },
       ...deps
     },
-    tiempos: { opciones: 3000, servidor: 3000, reintento: 2000, pestana: 500, adb: 3000, chrome: 5000, ...tiempos },
+    tiempos: { opciones: 3000, servidor: 3000, reintento: 2000, pestana: 500, adb: 3000, chrome: 5000, nitido: 300, ...tiempos },
     interno: { cerrando: false, inicio: Date.now(), modoElegido: estado.modo, capturas: [], impreso: new Map(), servidoresVistos: new Map() },
     espejo: espejoInicial(),
     relojes: {},

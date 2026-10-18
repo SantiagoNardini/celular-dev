@@ -10,7 +10,9 @@ const LIMITE = '--cuadro';
 
 export function espejoInicial() {
   // clientes: cada panel que mira, con el ancho (en píxeles de su pantalla) en que muestra el celular
-  return { clientes: new Map(), activo: false, pedido: 0, ultimo: null, ancho: 0, alto: 0 };
+  // ultimo: la última imagen mandada (liviana o nítida); liviano: la última liviana, para reconocer el eco;
+  // version: sube con cada cambio real de la pantalla; refinando: hay una captura nítida en curso
+  return { clientes: new Map(), activo: false, pedido: 0, ultimo: null, liviano: null, version: 0, refinando: false, ancho: 0, alto: 0 };
 }
 
 function escribirCuadro(respuesta, jpeg) {
@@ -59,6 +61,7 @@ async function iniciarEspejo(app) {
 }
 
 function detenerEspejo(app) {
+  clearTimeout(app.relojes.nitido);
   if (!app.espejo.activo) return;
   app.espejo.activo = false;
   app.estado.espejo = false;
@@ -75,11 +78,44 @@ export function reanudarEspejo(app) {
 // Llega un cuadro del celular: se guarda (para quien abra el panel después) y se manda a los paneles.
 export function alCuadro(app, { datos, ancho, alto }) {
   const { espejo, estado } = app;
-  espejo.ultimo = datos;
   espejo.ancho = ancho;
   espejo.alto = alto;
+  // Después de cada captura nítida, Chrome manda otra vez el último cuadro liviano, idéntico byte por byte
+  // (se comprobó en un moto g24; un cambio real da uno distinto). No es un cambio: se descarta, para que no
+  // pise a la imagen nítida ni dispare otra captura sin fin.
+  if (espejo.liviano && espejo.liviano.equals(datos)) return;
+  espejo.liviano = datos;
+  espejo.ultimo = datos;
+  espejo.version++;
   for (const c of espejo.clientes.keys()) escribirCuadro(c, datos);
   if (!estado.espejo) { estado.espejo = true; cambio(app); }
+  programarNitido(app);
+}
+
+// Mientras se toca o se desliza llegan imágenes livianas, rápidas. Cuando la pantalla se queda quieta
+// (nitido ms sin cambios), llega una captura a resolución completa y poca compresión: se lee mejor justo
+// cuando se mira con calma, y no cuesta velocidad cuando se usa.
+function programarNitido(app) {
+  clearTimeout(app.relojes.nitido);
+  app.relojes.nitido = setTimeout(() => afinar(app), app.tiempos.nitido);
+}
+
+async function afinar(app) {
+  const { espejo, chrome } = app;
+  if (espejo.refinando || !espejo.clientes.size || !chrome || !chrome.conectado || app.interno.cerrando) return;
+  const version = espejo.version;
+  espejo.refinando = true;
+  try {
+    const nitida = await chrome.capturaNitida();
+    // si la pantalla cambió mientras se sacaba, ya es vieja: se descarta
+    if (espejo.version === version && espejo.clientes.size) {
+      espejo.ultimo = nitida;
+      for (const c of espejo.clientes.keys()) escribirCuadro(c, nitida);
+    }
+  } catch { /* sin imagen nítida se sigue con la liviana */ } finally {
+    espejo.refinando = false;
+    if (espejo.version !== version) programarNitido(app);
+  }
 }
 
 const TECLAS = new Set(['Enter', 'Backspace', 'Tab', 'Escape', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']);
