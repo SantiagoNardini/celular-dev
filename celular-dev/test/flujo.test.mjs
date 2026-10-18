@@ -358,6 +358,31 @@ test('el espejo pide imágenes del ancho en que se muestran, y cambia si otro pa
   await p.terminado;
 });
 
+test('al volver a la pestaña del panel con la pantalla quieta, el espejo se muestra sin esperar ningún movimiento', async () => {
+  const p = armar({ opciones: { carpeta: carpetaSitio } });
+  await arrancarHastaCorrer(p);
+  const mirar = async () => {
+    const pedido = request(`${PANEL}/api/espejo.mjpg`, { headers: { Host: `localhost:${process.env.CELULAR_PUERTO_PANEL}` } });
+    const respuesta = await new Promise((resolver, rechazar) => { pedido.on('response', resolver); pedido.on('error', rechazar); pedido.end(); });
+    respuesta.resume();
+    return pedido;
+  };
+  let pedido = await mirar();
+  p.chrome.cuadro(Buffer.from([0xff, 0xd8, 1, 1, 1, 0xff, 0xd9]));
+  await hasta(() => p.estado.espejo, { que: 'mostrar el espejo' });
+  // el panel pasa a segundo plano: suelta el espejo
+  pedido.destroy();
+  await hasta(() => p.estado.espejo === false, { que: 'soltar el espejo' });
+  // vuelve y la pantalla sigue igual: Chrome no manda ningún cuadro, pero el panel tiene que mostrar la imagen
+  const nitidas = p.chrome.nitidas || 0;
+  pedido = await mirar();
+  await hasta(() => p.estado.espejo === true, { que: 'mostrar el espejo de nuevo' });
+  await hasta(() => (p.chrome.nitidas || 0) > nitidas, { que: 'sacar una captura nueva' });
+  pedido.destroy();
+  await p.app.salir(0);
+  await p.terminado;
+});
+
 test('el espejo manda una imagen nítida cuando la pantalla se queda quieta, sin que el eco la pise', async () => {
   const p = armar({ opciones: { carpeta: carpetaSitio } });
   await arrancarHastaCorrer(p);

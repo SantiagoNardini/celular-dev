@@ -60,7 +60,11 @@ export function mirarEspejo(app, pedido, respuesta) {
   respuesta.writeHead(200, { 'Content-Type': `multipart/x-mixed-replace; boundary=${LIMITE.slice(2)}`, 'Cache-Control': 'no-store', Connection: 'keep-alive' });
   respuesta.write(`${LIMITE}\r\n`);
   app.espejo.clientes.set(respuesta, anchoPedido(pedido.url));
-  if (app.espejo.ultimo) escribirCuadro(respuesta, app.espejo.ultimo);
+  // la última imagen se manda enseguida: con la pantalla quieta, Chrome no manda otra hasta que algo cambie
+  if (app.espejo.ultimo) {
+    escribirCuadro(respuesta, app.espejo.ultimo);
+    if (!app.estado.espejo && app.chrome && app.chrome.conectado) { app.estado.espejo = true; cambio(app); }
+  }
   pedido.on('close', () => {
     app.espejo.clientes.delete(respuesta);
     if (!app.espejo.clientes.size) detenerEspejo(app);
@@ -78,6 +82,8 @@ async function iniciarEspejo(app) {
   espejo.pedido = anchoDeseado(espejo);
   try {
     await chrome.iniciarEspejo({ ancho: espejo.pedido, alto: Math.round(espejo.pedido * 2.25) });
+    // con la pantalla quieta Chrome no manda ningún cuadro hasta que algo cambie: si no llega ninguno, se saca una captura
+    programarNitido(app);
   } catch (error) {
     espejo.activo = false;
     app.ui.anotar('INFO', `Espejo: ${error.message}`);
@@ -154,6 +160,7 @@ async function afinar(app) {
     if (espejo.version === version && espejo.clientes.size) {
       espejo.ultimo = nitida;
       for (const c of espejo.clientes.keys()) escribirCuadro(c, nitida);
+      if (!app.estado.espejo) { app.estado.espejo = true; cambio(app); }
     }
   } catch { /* sin imagen nítida se sigue con la liviana */ } finally {
     espejo.refinando = false;
