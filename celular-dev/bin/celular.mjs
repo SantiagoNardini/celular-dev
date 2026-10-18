@@ -34,6 +34,8 @@ const app = crearApp({ opciones });
 
 process.on('SIGINT', () => app.salir(0));
 process.on('SIGTERM', () => app.salir(0));
+process.on('SIGHUP', () => app.salir(0));     // se cerró la ventana de la terminal
+process.on('SIGBREAK', () => app.salir(0));   // Ctrl+Pausa en Windows
 process.on('uncaughtException', error => {
   ui.falla(t('error.algoSalioMal', { detalle: error.message }), [t('error.cerraYAbri'), t('error.mandaRegistro', { ruta: rutaParaMostrar(join(carpetaDatos(), 'registro.log')) })]);
   ui.anotar('ERROR', error.stack || String(error));

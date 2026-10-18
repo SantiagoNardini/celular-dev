@@ -16,9 +16,12 @@ if errorlevel 1 goto node_viejo
 
 :arrancar
 "%NODO%" "%~dp0celular-dev\bin\celular.mjs" %*
+set "CODIGO=%errorlevel%"
+rem Si se cerro bien, la ventana se cierra sola: no queda nada abierto. Solo con un error espera, para poder leerlo.
+if "%CODIGO%"=="0" exit /b 0
 echo.
 pause
-exit /b
+exit /b %CODIGO%
 
 :sin_node
 echo.

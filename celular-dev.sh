@@ -43,5 +43,6 @@ fi
 
 "$NODO" "$DIR/celular-dev/bin/celular.mjs" "$@"
 CODIGO=$?
-esperar
+# si se cerró bien, la ventana se cierra sola; solo con un error espera, para poder leerlo
+[ "$CODIGO" -ne 0 ] && esperar
 exit $CODIGO

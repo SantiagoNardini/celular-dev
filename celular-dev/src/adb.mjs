@@ -1,11 +1,12 @@
 // Todo lo que habla con ADB: encontrarlo, prender su servicio, correr comandos, armar los túneles
 // (reverse y forward) y vigilar si el celular se conecta o se desconecta.
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join, delimiter } from 'node:path';
 import { EventEmitter } from 'node:events';
 import { adbPropio } from './instalar-adb.mjs';
 import { t } from './idioma.mjs';
+import { puertoAbierto } from './servidor.mjs';
 
 const esWindows = process.platform === 'win32';
 
@@ -37,11 +38,17 @@ export class Adb extends EventEmitter {
     this.rastreo = null;
     this.estado = 'desconocido';   // device, unauthorized, offline, sin-celular, sin-permiso (Linux)
     this.cerrando = false;
+    this.loIniciamos = undefined;   // el servicio de adb lo prendimos nosotros (y lo apagamos al salir), o ya estaba
   }
 
   // Prende el servicio de adb si no está prendido. Se lanza sin conectarle la salida: el servicio
   // queda abierto en segundo plano y, si heredara la salida, nos quedaríamos esperando a que se cierre.
-  prender() {
+  async prender() {
+    if (this.loIniciamos === undefined) {
+      this.loIniciamos = !(await puertoAbierto(5037));
+      // aunque el programa se cierre de golpe, el servicio que prendimos no queda abierto en el Administrador de tareas
+      if (this.loIniciamos) process.once('exit', () => this.apagarServicio());
+    }
     return new Promise(resolver => {
       const p = spawn(this.ruta, ['start-server'], { stdio: 'ignore', windowsHide: true });
       const reloj = setTimeout(() => { p.kill(); resolver(false); }, 15000);
@@ -156,6 +163,15 @@ export class Adb extends EventEmitter {
   cerrar() {
     this.cerrando = true;
     if (this.rastreo) this.rastreo.kill();
+    this.apagarServicio();
+  }
+
+  // Si el servicio de adb lo prendió celular-dev, se apaga al salir (si ya estaba prendido, de otro programa o de
+  // antes, se deja: lo puede estar usando otro). Es sincrónico: sirve también cuando el programa ya se está yendo.
+  apagarServicio() {
+    if (!this.loIniciamos) return;
+    this.loIniciamos = false;
+    try { spawnSync(this.ruta, ['kill-server'], { stdio: 'ignore', windowsHide: true, timeout: 4000 }); } catch { /* ya no está */ }
   }
 }
 
