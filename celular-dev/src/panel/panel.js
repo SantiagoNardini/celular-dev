@@ -50,6 +50,12 @@ const ICONOS = {
 };
 const ic = nombre => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONOS[nombre]}</svg>`;
 
+// Banderas de los idiomas (dibujadas acá: los emojis de bandera no se ven en Windows)
+const BANDERAS = {
+  en: '<svg class="bandera" viewBox="0 0 60 40" aria-hidden="true"><clipPath id="bw"><rect width="60" height="40" rx="4"/></clipPath><g clip-path="url(#bw)"><rect width="60" height="40" fill="#012169"/><path d="M0 0l60 40M60 0L0 40" stroke="#fff" stroke-width="8"/><path d="M0 0l60 40M60 0L0 40" stroke="#C8102E" stroke-width="3"/><path d="M30 0v40M0 20h60" stroke="#fff" stroke-width="13"/><path d="M30 0v40M0 20h60" stroke="#C8102E" stroke-width="8"/></g></svg>',
+  es: '<svg class="bandera" viewBox="0 0 60 40" aria-hidden="true"><clipPath id="be"><rect width="60" height="40" rx="4"/></clipPath><g clip-path="url(#be)"><rect width="60" height="40" fill="#AA151B"/><rect y="10" width="60" height="20" fill="#F1BF00"/></g></svg>'
+};
+
 function avisar(texto, mal = false) {
   avisoEl.textContent = texto;
   avisoEl.className = 'toast visible' + (mal ? ' mal' : '');
@@ -119,7 +125,7 @@ function dibujarCabecera() {
   const otro = estado.idioma === 'es' ? 'en' : 'es';
   const idioma = document.getElementById('idioma');
   idioma.dataset.valor = otro;
-  idioma.textContent = otro === 'en' ? 'English' : 'Español';
+  idioma.innerHTML = `${BANDERAS[otro]}${otro === 'en' ? 'English' : 'Español'}`;
   const cerrar = document.getElementById('cerrar');
   cerrar.textContent = tr('cabecera.cerrar');
   cerrar.title = tr('cabecera.cerrarTitulo');
