@@ -502,7 +502,6 @@ Needs the phone connected over USB with USB debugging turned on, and Chrome on t
     'espejo.ayuda': 'use it from here',
     'espejo.atras': 'Back',
     'espejo.enVivo': 'LIVE',
-    'espejo.esperando': 'Waiting for the screen… If it is off, turn it on.',
     'espejo.sinPestana': 'No connection to the tab',
 
     'oferta.win32': '<b>Want celular-dev at hand?</b> I can add a shortcut to your Desktop and Start menu, with its icon.',

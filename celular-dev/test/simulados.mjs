@@ -21,6 +21,9 @@ export class AdbSimulado extends EventEmitter {
   async prender() { return true; }
 
   async shell(comando) {
+    (this.comandos ||= []).push(comando);
+    if (comando.startsWith('settings get global stay_on_while_plugged_in')) return { codigo: 0, salida: this.stayOn ?? '0' };
+    if (comando.startsWith('settings put global stay_on_while_plugged_in')) { this.stayOn = comando.split(' ').pop(); return { codigo: 0, salida: '' }; }
     if (comando.startsWith('getprop ro.product.model')) return { codigo: 0, salida: this.modelo };
     if (comando.startsWith('getprop ro.build.version.release')) return { codigo: 0, salida: '14' };
     if (comando.startsWith('pm path com.android.chrome')) return { codigo: 0, salida: this.tieneChrome ? 'package:/data/app/chrome/base.apk' : '' };

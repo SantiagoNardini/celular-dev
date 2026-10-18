@@ -502,7 +502,6 @@ Necesita el celular conectado por USB con la depuración USB activada, y Chrome 
     'espejo.ayuda': 'tocalo desde acá',
     'espejo.atras': 'Atrás',
     'espejo.enVivo': 'EN VIVO',
-    'espejo.esperando': 'Esperando la pantalla… Si está apagada, prendela.',
     'espejo.sinPestana': 'Sin conexión con la pestaña',
 
     'oferta.win32': '<b>¿Querés tener celular-dev a mano?</b> Creo un acceso directo en tu Escritorio y en el menú Inicio, con su ícono.',

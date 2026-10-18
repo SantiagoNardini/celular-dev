@@ -190,6 +190,22 @@ test('avisa si hay una versión nueva publicada, la abre y se puede dejar para d
   await q.terminado;
 });
 
+test('mantiene la pantalla del celular prendida mientras corre, la prende si estaba apagada y la deja como estaba al salir', async () => {
+  const p = armar({ opciones: { carpeta: carpetaSitio } });
+  p.adb.stayOn = '2';   // la persona ya tenía «mantener activa» con el cable USB
+  await arrancarHastaCorrer(p);
+  assert.equal(p.adb.stayOn, '3');
+  assert.ok(p.adb.comandos.includes('input keyevent KEYCODE_WAKEUP'), 'tiene que despertar la pantalla');
+  // al reconectar, se vuelve a pedir (el celular pudo reiniciarse)
+  p.adb.stayOn = '0';
+  p.adb.cambiar('sin-celular');
+  p.adb.cambiar('device');
+  await hasta(() => p.adb.stayOn === '3', { que: 'volver a mantenerla prendida' });
+  await p.app.salir(0);
+  await p.terminado;
+  assert.equal(p.adb.stayOn, '2', 'tiene que devolver lo que tenía');
+});
+
 test('un solo botón para arreglar lo que falla: el celular, el servidor o la pestaña de Chrome', async () => {
   const servidor = createServer((_, r) => r.end('<!doctype html><h1>Servidor</h1>'));
   await new Promise(r => servidor.listen(0, '127.0.0.1', r));

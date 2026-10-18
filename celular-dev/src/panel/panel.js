@@ -394,7 +394,7 @@ function vistaPanel() {
         <button class="principal chico" data-accion="entendido">${tr('bienvenida.entendido')}</button></section>` : '',
     espejoSugerencia: s.primerExito && s.espejo ? `<span class="dedo"></span><p>${tr('bienvenida.sugerencia')}</p>` : '',
     direccion: direccionDelCelular(s),
-    espejoTapa: s.espejo ? '' : s.consola ? `<div class="cargando"><span class="girando" aria-hidden="true"></span><p class="vacia">${tr('espejo.esperando')}</p></div>` : `<p class="vacia">${tr('espejo.sinPestana')}</p>`,
+    espejoTapa: s.espejo ? '' : s.consola ? `<div class="cargando"><span class="girando" role="img" aria-label="${tr('espejo.cargando')}"></span></div>` : `<p class="vacia">${tr('espejo.sinPestana')}</p>`,
     pie: `<div class="controles-espejo">
         <button data-accion="atras" title="${tr('espejo.atras')}" aria-label="${tr('espejo.atras')}">${ic('atras')}</button>
         <button data-accion="recargar" title="${tr('panel.recargar')}" aria-label="${tr('panel.recargar')}">${ic('recargar')}</button>

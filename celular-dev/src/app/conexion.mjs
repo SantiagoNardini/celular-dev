@@ -4,6 +4,7 @@ import { t } from '../idioma.mjs';
 import { cambio, contar, registrarAviso } from './estado.mjs';
 import { reanudarEspejo } from './espejo.mjs';
 import { alCargar } from './frescura.mjs';
+import { mantenerDespierto } from './despierto.mjs';
 import { tamanoDe, paraChrome, listaParaPanel } from './tamanos.mjs';
 
 const espera = ms => new Promise(r => setTimeout(r, ms));
@@ -94,6 +95,7 @@ async function rearmarAhora(app) {
   try {
     // el túnel se perdió con la desconexión: se vuelve a armar, sin olvidar si era de otro programa
     await adb.reverse(sitio.puerto);
+    await mantenerDespierto(app);
     const anterior = app.puertoDevtools;
     app.puertoDevtools = await adb.forwardChrome();
     chrome.puerto = app.puertoDevtools;

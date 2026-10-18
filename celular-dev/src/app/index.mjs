@@ -22,6 +22,7 @@ import { llevarSitioAlCelular, datosDelCelular, escucharAdb, escucharChrome, exp
 import { recargar, alAccion } from './acciones.mjs';
 import { espejoInicial, mirarEspejo, alCuadro } from './espejo.mjs';
 import { mostrarResumen } from './teclas.mjs';
+import { mantenerDespierto, devolverPantalla } from './despierto.mjs';
 import { versionActual, buscarVersionPublicada, revisarNovedad } from './novedad.mjs';
 
 const espera = ms => new Promise(r => setTimeout(r, ms));
@@ -133,6 +134,7 @@ async function arrancar(app) {
     return;
   }
   contar(app, 'ok', t('arranque.celularConectado', { modelo: estado.celular.modelo }));
+  await mantenerDespierto(app);
 
   ui.paso(4, 4, t('paso.abrir'));
   app.chrome = deps.crearChrome(app.puertoDevtools);
@@ -173,6 +175,7 @@ async function salir(app, codigo) {
   for (const c of app.espejo.clientes.keys()) c.end();
   if (app.chrome) app.chrome.cerrar();
   if (adb) {
+    await devolverPantalla(app);
     adb.cerrar();
     if (app.puertoDevtools) await adb.quitarForward(app.puertoDevtools);
     // el túnel se deja si ya estaba antes: puede ser de otro programa
