@@ -16,6 +16,7 @@ import { tocar, marcarPrimerExito, olvidarImagen, reanudarEspejo } from './espej
 import { esperarCarga } from './frescura.mjs';
 import { tamanoDe, paraChrome, cabe } from './tamanos.mjs';
 import { limpiarSoltada } from '../buscar-carpeta.mjs';
+import { ocultarNovedad } from './novedad.mjs';
 
 const sello = (ui, d) => `${ui.fecha(d)}_${ui.hora(d).replace(/:/g, '-')}`;
 
@@ -336,6 +337,12 @@ export async function alAccion(app, accion, valor) {
       return {};
     case 'idioma': return cambiarIdioma(app, valor);
     case 'arreglar': return arreglar(app);
+    case 'ver-novedad':
+      // la dirección sale del estado, no del panel
+      if (!estado.novedad || !/^https:\/\/github\.com\//.test(estado.novedad.url)) return {};
+      app.deps.abrirNavegador(estado.novedad.url);
+      return {};
+    case 'ocultar-novedad': ocultarNovedad(app); return {};
     case 'abrir':
       if (estado.fase !== 'corriendo') return { error: t('accion.noListo') };
       if (await abrirEnCelular(app)) await conectarConsola(app);

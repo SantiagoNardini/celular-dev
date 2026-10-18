@@ -44,6 +44,7 @@ const ICONOS = {
   tilde: '<path d="m20 6-11 11-5-5"/>',
   globo: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
   limpiar: '<path d="M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/>',
+  compacto: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/>',
   campana: '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
   campanaNo: '<path d="M13.73 21a2 2 0 0 1-3.46 0M18.63 13A17.9 17.9 0 0 1 18 8M6.26 6.26A5.9 5.9 0 0 0 6 8c0 7-3 9-3 9h14M18 8a6 6 0 0 0-9.33-5"/><path d="m1 1 22 22"/>'
 };
@@ -96,6 +97,7 @@ document.addEventListener('click', e => {
     return;
   }
   if (boton && boton.dataset.accion === 'avisos') { alternarAvisos(); return; }
+  if (boton && boton.dataset.accion === 'compacto') { alternarCompacto(); return; }
   if (boton && !boton.classList.contains('ocupado')) accion(boton.dataset.accion, boton.dataset.valor, boton);
 });
 document.addEventListener('toggle', e => { if (e.target.id === 'ayuda') ayudaAbierta = e.target.open; }, true);
@@ -122,6 +124,25 @@ function dibujarCabecera() {
   cerrar.textContent = tr('cabecera.cerrar');
   cerrar.title = tr('cabecera.cerrarTitulo');
   dibujarBotonAvisos();
+  dibujarBotonCompacto();
+}
+
+// ---------- Vista compacta ----------
+// Solo el celular y los errores, para dejar la ventana al costado mientras se edita. Se recuerda en este navegador.
+function compactoActivo() { try { return localStorage.getItem('compacto') === '1'; } catch { return false; } }
+function dibujarBotonCompacto() {
+  const boton = document.getElementById('compacto');
+  const activo = compactoActivo();
+  document.body.classList.toggle('compacto', activo);
+  boton.innerHTML = ic('compacto');
+  boton.classList.toggle('activa', activo);
+  boton.setAttribute('aria-pressed', String(activo));
+  boton.title = tr('cabecera.compactoTitulo');
+  boton.setAttribute('aria-label', tr('cabecera.compacto'));
+}
+function alternarCompacto() {
+  try { localStorage.setItem('compacto', compactoActivo() ? '0' : '1'); } catch { /* sin almacenamiento: dura hasta recargar */ document.body.classList.toggle('compacto'); }
+  dibujarBotonCompacto();
 }
 
 // ---------- Avisos del sistema ----------
@@ -326,7 +347,7 @@ function vistaPanel() {
         <button class="enlace" data-accion="copiar-error" data-valor="${esc(a.id)}">${tr('errores.copiar')}</button></div></div>
         ${a.veces > 1 ? `<span class="veces">×${a.veces}</span>` : ''}</div>`;
       }).join('')
-    : `<p class="vacio">${tr('panel.sinErrores')}</p>`;
+    : `<p class="vacio">${ic('tilde')}${tr('panel.sinErrores')}</p>`;
   const actividad = s.actividad.length
     ? s.actividad.map(a => `<div class="item ${a.nivel}"><span class="punto" aria-hidden="true"></span><div class="cuerpo"><p class="simple">${conCodigo(a.texto)}</p><p class="tecnico">${esc(a.hora)}</p></div></div>`).join('')
     : `<p class="vacio">${tr('panel.todaviaNada')}</p>`;
@@ -363,6 +384,7 @@ function vistaPanel() {
         <p class="simple">${conCodigo(p.simple)}</p>${p.ejemplos.length ? `<p class="tecnico">${p.ejemplos.map(esc).join(' · ')}</p>` : ''}</div></div>`).join(''),
     errores: `<h2>${tr('panel.erroresTitulo')} ${s.avisos.length ? `<span class="cuenta">${s.avisos.length}</span><button class="chico fantasma" data-accion="limpiar">${ic('limpiar')}${tr('panel.limpiar')}</button>` : ''}</h2>${errores}`,
     actividad: `<h2>${tr('panel.actividad')}</h2>${actividad}`,
+    novedad: s.novedad ? `<div class="banda suave novedad"><p>${tr('novedad.texto', { version: s.novedad.version })}</p><button class="chico" data-accion="ver-novedad">${tr('novedad.ver')}</button><button class="chico fantasma" data-accion="ocultar-novedad">${tr('novedad.ahoraNo')}</button></div>` : '',
     problema: avisoProblema(s),
     desactualizado: avisoDesactualizado(s),
     tamano: selectorTamano(s),
@@ -372,7 +394,7 @@ function vistaPanel() {
         <button class="principal chico" data-accion="entendido">${tr('bienvenida.entendido')}</button></section>` : '',
     espejoSugerencia: s.primerExito && s.espejo ? `<span class="dedo"></span><p>${tr('bienvenida.sugerencia')}</p>` : '',
     direccion: direccionDelCelular(s),
-    espejoTapa: s.espejo ? '' : `<p class="vacia">${s.consola ? tr('espejo.esperando') : tr('espejo.sinPestana')}</p>`,
+    espejoTapa: s.espejo ? '' : s.consola ? `<div class="cargando"><span class="girando" aria-hidden="true"></span><p class="vacia">${tr('espejo.esperando')}</p></div>` : `<p class="vacia">${tr('espejo.sinPestana')}</p>`,
     pie: `<div class="controles-espejo">
         <button data-accion="atras" title="${tr('espejo.atras')}" aria-label="${tr('espejo.atras')}">${ic('atras')}</button>
         <button data-accion="recargar" title="${tr('panel.recargar')}" aria-label="${tr('panel.recargar')}">${ic('recargar')}</button>
@@ -442,13 +464,14 @@ function direccionDelCelular(s) {
 // está en el esqueleto: así la imagen en vivo no se corta cada vez que cambia algo.
 const ESQUELETOS = {
   corriendo: `<div data-zona="oferta"></div><div class="tablero"><div>
+      <div data-zona="novedad"></div>
       <div data-zona="problema"></div>
       <div data-zona="desactualizado"></div>
       <div data-zona="bienvenida"></div>
       <div class="metricas" data-zona="metricas"></div>
       <div data-zona="botones"></div>
       <section class="tarjeta lista" data-zona="revision"></section>
-      <section class="tarjeta lista" data-zona="errores"></section>
+      <section class="tarjeta lista" data-zona="errores" aria-live="polite"></section>
       <section class="tarjeta lista actividad" data-zona="actividad"></section>
     </div><div>
       <div class="telefono espejo"><div class="pantalla">

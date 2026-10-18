@@ -89,3 +89,11 @@ test('tamaños de pantalla: cuáles entran en la pantalla real (411 × 773) y qu
   assert.equal(cabe({ ancho: 412, alto: 700 }, real), true);
   assert.equal(cabe({ ancho: 413, alto: 700 }, real), false);
 });
+
+import { esMasNueva } from '../src/app/novedad.mjs';
+test('comparar versiones número por número', () => {
+  assert.equal(esMasNueva('0.10.0', '0.9.2'), true);
+  assert.equal(esMasNueva('v0.4.0', '0.3.1'), true);
+  assert.equal(esMasNueva('0.3.1', '0.3.1'), false);
+  assert.equal(esMasNueva('0.3.0', '0.3.1'), false);
+});

@@ -3,7 +3,7 @@
 // Lo demás es de verdad: el panel, el servidor de la carpeta, el vigía de archivos y lo que se recuerda.
 import { test, before, after, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createServer, request } from 'node:http';
@@ -52,6 +52,7 @@ function armar({ opciones = {}, deps = {} } = {}) {
         crearChrome: puerto => { piezas.chrome = new ChromeSimulado(puerto); adb.chrome = piezas.chrome; return piezas.chrome; },
         abrirNavegador: () => {}, abrirConElSistema: () => {}, hayAccesos: async () => true,
         elegirCarpeta: async () => null,
+        buscarVersion: async () => null,
         // sin buscar servidores en los puertos conocidos (puede haber uno de verdad prendido)
         servidores: { conocidos: [], puertoAbierto, detectar: async () => null },
         terminar: codigo => { piezas.codigo = codigo; resolver(codigo); },
@@ -164,6 +165,29 @@ test('los errores de antes de recargar se separan de los nuevos, sin tener que l
   assert.equal(p.estado.ronda, ronda);
   await p.app.salir(0);
   await p.terminado;
+});
+
+test('avisa si hay una versión nueva publicada, la abre y se puede dejar para después', async () => {
+  const abiertas = [];
+  const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  const url = 'https://github.com/SantiagoNardini/celular-dev/releases/tag/v99.0.0';
+  const p = armar({ opciones: { carpeta: carpetaSitio }, deps: { abrirNavegador: u => abiertas.push(u), buscarVersion: async () => ({ version: '99.0.0', url }) } });
+  await arrancarHastaCorrer(p);
+  await hasta(() => p.estado.novedad, { que: 'mostrar la versión nueva' });
+  assert.equal(p.estado.version, version);
+  await accion('ver-novedad');
+  assert.deepEqual(abiertas, [url]);
+  await accion('ocultar-novedad');
+  assert.equal(p.estado.novedad, null);
+  await p.app.salir(0);
+  await p.terminado;
+  // la que ya se dejó para después no vuelve
+  const q = armar({ opciones: { carpeta: carpetaSitio }, deps: { buscarVersion: async () => ({ version: '99.0.0', url }) } });
+  await arrancarHastaCorrer(q);
+  await new Promise(r => setTimeout(r, 100));
+  assert.equal(q.estado.novedad, null);
+  await q.app.salir(0);
+  await q.terminado;
 });
 
 test('un solo botón para arreglar lo que falla: el celular, el servidor o la pestaña de Chrome', async () => {

@@ -28,6 +28,8 @@ export function estadoInicial({ carpetaProyecto, esProyecto, manual }) {
     modo: manual ? 'manual' : 'vivo',  // vivo | manual | live-server
     consola: false,
     espejo: false,                     // llegan cuadros de la pantalla del celular
+    version: '',                       // la de celular-dev que está corriendo
+    novedad: null,                     // hay una versión nueva publicada: { version, url }
     primerExito: false,                // todavía no tocó el espejo: el panel le muestra qué hacer
     red: 'normal',                     // normal | lenta | sin-conexion: la red que se simula en el celular
     revision: null,                    // la última revisión del sitio: { hora, red, puntos }

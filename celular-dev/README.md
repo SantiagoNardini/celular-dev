@@ -9,6 +9,8 @@ Probá tu sitio en tu **celular Android real** mientras programás en la computa
 - Con un botón arma un **informe para tu IA** (Claude, ChatGPT, Copilot…) con todos los errores, listo para pegar y pedir que los arregle. Cada error también tiene su propio «Copiar para la IA».
 - Después de recargar, los errores **nuevos** se marcan y los de antes quedan atenuados: no hace falta limpiar a mano.
 - Si algo falla (celular, servidor o pestaña de Chrome), el panel lo explica y ofrece **un solo botón** para arreglarlo.
+- **Vista compacta** (botón de la cabecera): solo el celular y los errores, para dejar la ventana al costado mientras editás.
+- Avisa si hay una **versión nueva** publicada en GitHub (una sola consulta al abrir, sin mandar nada tuyo; se apaga con `CELULAR_SIN_ACTUALIZACIONES=1`).
 - Con la campana de la cabecera, el sistema te **avisa** si el celular se desconecta, el servidor se apaga o aparece un error grave aunque el panel esté tapado.
 - Un **asistente** te guía para preparar el celular, con una animación de cada pantalla que hay que recorrer (activar la depuración USB, el aviso de «Permitir»). Los pasos se tildan solos. La primera vez que todo funciona, un aviso te invita a tocar el celular desde el panel.
 - En **inglés o español**: arranca en inglés; el botón «Español» del panel lo cambia y lo recuerda (o `--idioma es`).

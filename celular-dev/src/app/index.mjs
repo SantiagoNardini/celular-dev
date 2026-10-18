@@ -22,6 +22,7 @@ import { llevarSitioAlCelular, datosDelCelular, escucharAdb, escucharChrome, exp
 import { recargar, alAccion } from './acciones.mjs';
 import { espejoInicial, mirarEspejo, alCuadro } from './espejo.mjs';
 import { mostrarResumen } from './teclas.mjs';
+import { versionActual, buscarVersionPublicada, revisarNovedad } from './novedad.mjs';
 
 const espera = ms => new Promise(r => setTimeout(r, ms));
 const carpetaHerramienta = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -41,6 +42,7 @@ export function crearApp({ opciones = {}, cwd = process.cwd(), deps = {}, tiempo
     deps: {
       buscarAdb, crearAdb: ruta => new Adb(ruta), crearChrome: puerto => new Chrome(puerto), iniciarPanel, abrirNavegador,
       abrirConElSistema, elegirCarpeta, descargarAdb, hayAccesos, terminar: codigo => process.exit(codigo),
+      buscarVersion: buscarVersionPublicada,
       buscarCarpeta, raicesBusqueda: () => raicesDeBusqueda(leerConfig().recientes.map(r => dirname(r))),
       servidores: { conocidos: PUERTOS_CONOCIDOS, puertoAbierto, detectar },
       ...deps
@@ -53,6 +55,7 @@ export function crearApp({ opciones = {}, cwd = process.cwd(), deps = {}, tiempo
     dejarDeVigilar: null, alElegirSitio: null, rearmando: null
   };
   // la primera vez, el panel le muestra qué hacer con el espejo
+  estado.version = versionActual(carpetaHerramienta);
   estado.primerExito = app.conPanel && !preferencia('primerExito');
   app.salir = codigo => salir(app, codigo);
   app.arrancar = () => arrancar(app);
@@ -156,6 +159,7 @@ async function arrancar(app) {
   estado.fase = 'corriendo';
   cambio(app);
   mostrarResumen(app);
+  revisarNovedad(app, estado.version);
   ui.anotar('OK', `Corriendo: ${app.sitio.url}, ${estado.celular.modelo}, modo ${estado.modo}`);
 }
 
