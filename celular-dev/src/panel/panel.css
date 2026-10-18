@@ -8,7 +8,7 @@
   --radio: 10px;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root { color-scheme: dark;
     --fondo: #121212; --tarjeta: #1b1b1b; --suave: #242424; --borde: #2c2c2c; --borde-fuerte: #3d3d3d;
     --texto: #ececec; --texto-2: #a8a8a8; --texto-3: #767676;
     --acento: #8fd0b0; --acento-suave: #1d2b25; --sobre-acento: #0d1f18;
@@ -289,3 +289,17 @@ body.compacto [data-zona="actividad"], body.compacto [data-zona="tamano"], body.
 body.compacto .telefono.espejo { max-width: 300px; margin-inline: auto; }
 body.compacto main { padding-inline: 12px; }
 body.compacto .marca { display: none; }
+
+/* En una pantalla de escritorio, todo entra sin bajar: el celular se achica según el alto de la ventana y las
+   listas de errores y actividad se desplazan por dentro (el resto de los botones queda siempre a la vista). */
+@media (min-width: 761px) and (min-height: 560px) {
+  body:not(.compacto) main { padding-top: 16px; padding-bottom: 16px; }
+  body:not(.compacto) .tablero { align-items: stretch; }
+  body:not(.compacto) .tablero > div:first-child { display: flex; flex-direction: column; height: calc(100vh - 100px); min-height: 0; }
+  body:not(.compacto) .tablero > div:first-child > * { flex: none; }
+  body:not(.compacto) .tablero > div:first-child > .lista { flex: 1 1 0; min-height: 110px; overflow: auto; }
+  body:not(.compacto) .tablero > div:last-child { position: static; }
+  body:not(.compacto) .telefono.espejo { max-width: min(400px, calc((100vh - 314px) * .53 + 24px)); }
+  body:not(.compacto) .telefono.espejo .pantalla { min-height: 0; aspect-ratio: 411 / 773; }
+  body:not(.compacto) .nota-tamano { display: none; }
+}
