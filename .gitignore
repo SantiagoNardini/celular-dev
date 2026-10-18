@@ -1,0 +1,6 @@
+# paquetes armados con "npm run empaquetar" (se suben como release, no al repo) y el Node bajado
+paquete/
+# Node que trae el paquete para repartir
+runtime/
+node_modules/
+*.log

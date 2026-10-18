@@ -1,0 +1,11 @@
+# Los .bat necesitan saltos de línea de Windows (CRLF): con los de Linux (LF), cmd.exe se confunde
+# con las etiquetas y los "goto", y el doble clic falla. Git los guarda siempre así.
+* text=auto
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+*.png binary
+# Los lanzadores de Mac y Linux, al revés: con saltos de Windows no arrancan ("bad interpreter")
+*.sh text eol=lf
+*.command text eol=lf
+*.ico binary

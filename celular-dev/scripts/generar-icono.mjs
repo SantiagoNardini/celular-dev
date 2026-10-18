@@ -1,0 +1,106 @@
+// Dibuja el ícono de celular-dev (un celular verde lima sobre un cuadrado verde oscuro) y lo guarda como
+// marca/icono.ico con los tamaños que usa Windows (16 a 256 px), y como marca/icono.png (256 px).
+// Sin librerías: las figuras se calculan píxel por píxel (con 4×4 muestras por píxel para bordes suaves)
+// y el PNG se arma a mano con zlib, que viene con Node.
+// Uso: node scripts/generar-icono.mjs
+import { deflateSync } from 'node:zlib';
+import { writeFileSync, mkdirSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const FONDO = [0x0b, 0x3d, 0x2e];
+const LIMA = [0xc6, 0xe0, 0x3a];
+const PANTALLA = [0x14, 0x51, 0x3f];
+
+// distancia con signo a un rectángulo de esquinas redondeadas (negativa adentro); medidas de 0 a 1
+function rectRedondeado(x, y, cx, cy, ancho, alto, radio) {
+  const qx = Math.abs(x - cx) - ancho / 2 + radio;
+  const qy = Math.abs(y - cy) - alto / 2 + radio;
+  return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - radio;
+}
+
+// color del punto (x, y) del ícono, o null si es transparente
+function colorEn(x, y) {
+  if (rectRedondeado(x, y, 0.5, 0.5, 0.94, 0.94, 0.2) > 0) return null;
+  const cuerpo = rectRedondeado(x, y, 0.5, 0.5, 0.44, 0.74, 0.08);
+  if (cuerpo > 0) return FONDO;
+  if (rectRedondeado(x, y, 0.5, 0.47, 0.34, 0.52, 0.02) < 0) {
+    // en la pantalla, tres renglones como si fuera un sitio
+    for (const [ry, largo] of [[0.33, 0.22], [0.42, 0.16], [0.51, 0.19]]) {
+      if (rectRedondeado(x, y, 0.5 - (0.22 - largo) / 2, ry, largo, 0.035, 0.017) < 0) return LIMA;
+    }
+    return PANTALLA;
+  }
+  if (Math.hypot(x - 0.5, y - 0.79) < 0.032) return FONDO;   // botón de inicio
+  return LIMA;
+}
+
+function dibujar(tamano) {
+  const pixeles = Buffer.alloc(tamano * tamano * 4);
+  const M = 4;
+  for (let py = 0; py < tamano; py++) {
+    for (let px = 0; px < tamano; px++) {
+      let r = 0, g = 0, b = 0, a = 0;
+      for (let sy = 0; sy < M; sy++) for (let sx = 0; sx < M; sx++) {
+        const c = colorEn((px + (sx + 0.5) / M) / tamano, (py + (sy + 0.5) / M) / tamano);
+        if (c) { r += c[0]; g += c[1]; b += c[2]; a++; }
+      }
+      const i = (py * tamano + px) * 4;
+      if (a) { pixeles[i] = r / a; pixeles[i + 1] = g / a; pixeles[i + 2] = b / a; }
+      pixeles[i + 3] = Math.round((a / (M * M)) * 255);
+    }
+  }
+  return pixeles;
+}
+
+const TABLA_CRC = Array.from({ length: 256 }, (_, n) => {
+  let c = n;
+  for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+  return c >>> 0;
+});
+function crc32(datos) {
+  let c = 0xffffffff;
+  for (const byte of datos) c = TABLA_CRC[(c ^ byte) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
+function png(tamano, rgba) {
+  const parte = (tipo, datos) => {
+    const largo = Buffer.alloc(4); largo.writeUInt32BE(datos.length);
+    const cuerpo = Buffer.concat([Buffer.from(tipo, 'ascii'), datos]);
+    const crc = Buffer.alloc(4); crc.writeUInt32BE(crc32(cuerpo));
+    return Buffer.concat([largo, cuerpo, crc]);
+  };
+  const cabecera = Buffer.alloc(13);
+  cabecera.writeUInt32BE(tamano, 0); cabecera.writeUInt32BE(tamano, 4);
+  cabecera[8] = 8; cabecera[9] = 6;   // 8 bits por canal, RGBA
+  const crudo = Buffer.alloc(tamano * (tamano * 4 + 1));
+  for (let y = 0; y < tamano; y++) rgba.copy(crudo, y * (tamano * 4 + 1) + 1, y * tamano * 4, (y + 1) * tamano * 4);
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    parte('IHDR', cabecera), parte('IDAT', deflateSync(crudo, { level: 9 })), parte('IEND', Buffer.alloc(0))
+  ]);
+}
+
+// ICO con una imagen PNG por tamaño (Windows Vista en adelante lo entiende)
+function ico(imagenes) {
+  const cabecera = Buffer.alloc(6);
+  cabecera.writeUInt16LE(0, 0); cabecera.writeUInt16LE(1, 2); cabecera.writeUInt16LE(imagenes.length, 4);
+  let desplazamiento = 6 + 16 * imagenes.length;
+  const entradas = imagenes.map(({ tamano, datos }) => {
+    const e = Buffer.alloc(16);
+    e[0] = tamano >= 256 ? 0 : tamano; e[1] = tamano >= 256 ? 0 : tamano;
+    e.writeUInt16LE(1, 4); e.writeUInt16LE(32, 6);
+    e.writeUInt32LE(datos.length, 8); e.writeUInt32LE(desplazamiento, 12);
+    desplazamiento += datos.length;
+    return e;
+  });
+  return Buffer.concat([cabecera, ...entradas, ...imagenes.map(i => i.datos)]);
+}
+
+const carpeta = join(dirname(fileURLToPath(import.meta.url)), '..', 'marca');
+mkdirSync(carpeta, { recursive: true });
+const imagenes = [16, 24, 32, 48, 64, 128, 256].map(tamano => ({ tamano, datos: png(tamano, dibujar(tamano)) }));
+writeFileSync(join(carpeta, 'icono.ico'), ico(imagenes));
+writeFileSync(join(carpeta, 'icono.png'), imagenes.at(-1).datos);
+console.log(`Listo: ${join(carpeta, 'icono.ico')} (${imagenes.map(i => i.tamano).join(', ')} px)`);

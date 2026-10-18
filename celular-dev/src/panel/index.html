@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>celular-dev</title>
+<link rel="stylesheet" href="/panel.css">
+<link rel="icon" type="image/png" href="/icono.png">
+</head>
+<body>
+<header class="cabecera">
+  <div class="marca"><span class="logo" aria-hidden="true"></span>celular-dev</div>
+  <span id="estado" class="pastilla" role="status">Conectando…</span>
+  <button class="chico" data-accion="salir" title="Cierra celular-dev y desconecta el celular">Cerrar</button>
+</header>
+
+<main id="app" aria-live="polite">
+  <p class="nota">Conectando con celular-dev…</p>
+</main>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="/panel.js"></script>
+</body>
+</html>

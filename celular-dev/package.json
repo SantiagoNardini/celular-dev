@@ -1,0 +1,33 @@
+{
+  "name": "celular-dev",
+  "version": "0.1.0",
+  "description": "Probá tu sitio en tu celular Android real: lo abre por cable, lo recarga al guardar y te muestra sus errores en la terminal de la PC.",
+  "type": "module",
+  "bin": {
+    "celular": "bin/celular.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "marca"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "start": "node bin/celular.mjs",
+    "empaquetar": "node scripts/empaquetar.mjs",
+    "icono": "node scripts/generar-icono.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "android",
+    "adb",
+    "celular",
+    "mobile",
+    "live-reload",
+    "devtools",
+    "debug"
+  ],
+  "license": "MIT"
+}

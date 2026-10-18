@@ -1,0 +1,18 @@
+# Para que los editores (VS Code con la extensión EditorConfig, y otros) guarden cada archivo con el
+# formato que necesita. Los .bat, con saltos de línea de Windows: si no, el doble clic falla.
+root = true
+
+[*]
+charset = utf-8
+insert_final_newline = true
+indent_style = space
+indent_size = 2
+
+[*.{bat,cmd,ps1}]
+end_of_line = crlf
+
+[*.{mjs,js,json,css,html,md}]
+end_of_line = lf
+
+[*.{sh,command}]
+end_of_line = lf
