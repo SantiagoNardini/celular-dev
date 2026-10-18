@@ -99,13 +99,13 @@ details li { margin-bottom: 4px; }
 /* en el espejo no va la cámara: taparía parte del sitio */
 .telefono.espejo::before { display: none; }
 .telefono.espejo .pantalla { position: relative; min-height: 640px; place-items: stretch; border-radius: 35px; }
-.telefono.espejo img {
+.telefono.espejo #espejo {
   width: 100%; display: block; touch-action: none; user-select: none; -webkit-user-drag: none;
   /* un círculo como la yema del dedo, en vez de la flecha */
   cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Ccircle cx='14' cy='14' r='11' fill='rgba(255,255,255,.35)' stroke='rgba(0,0,0,.55)' stroke-width='1.5'/%3E%3C/svg%3E") 14 14, pointer;
 }
-.telefono.espejo img:not([src]) { display: none; }
-.telefono.espejo img:focus { outline: none; }
+.telefono.espejo #espejo:not(.activa) { display: none; }
+.telefono.espejo #espejo:focus { outline: none; }
 .telefono.espejo .pantalla:focus-within { box-shadow: 0 0 0 2px var(--acento); }
 .telefono.espejo .tapa:empty { display: none; }
 .telefono.espejo .tapa { position: absolute; inset: 0; display: grid; place-items: center; background: var(--tarjeta); }
@@ -250,3 +250,17 @@ button.ocupado svg.ic { animation: girar .8s linear infinite; }
 .direccion button:hover { background: var(--suave); color: var(--texto); }
 .direccion.fuera { border-color: var(--alerta); }
 .aviso-fuera { color: var(--alerta); font-size: 12px; text-align: center; margin-top: 6px; }
+
+/* Probar otros tamaños de pantalla */
+.selector { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 13px; color: var(--texto-2); }
+.selector select { flex: 1; min-width: 0; font: inherit; color: var(--texto); background: var(--tarjeta); border: 1px solid var(--borde-fuerte); border-radius: 8px; padding: 6px 8px; }
+.nota-tamano { font-size: 12px; color: var(--texto-3); margin-top: 6px; }
+/* con la imagen puesta, el celular toma su alto (un tablet o uno de costado no son altos como un celular) */
+.telefono.espejo .pantalla.con-imagen { min-height: 0; }
+.banda.suave { border-color: var(--borde-fuerte); color: var(--texto-2); }
+
+/* Arrastrar una carpeta */
+.soltar { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: color-mix(in srgb, var(--fondo) 88%, transparent); }
+.soltar[hidden] { display: none; }
+.soltar-caja { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 48px 64px; border: 2px dashed var(--acento); border-radius: 18px; background: var(--tarjeta); color: var(--acento); font-size: 18px; font-weight: 600; }
+.soltar-caja svg.ic { width: 36px; height: 36px; }

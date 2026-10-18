@@ -8,6 +8,7 @@ import { Traductor } from '../consola.mjs';
 import { leerConfig, recordarCarpeta, codigoRecordado, rutaParaMostrar } from '../lugares.mjs';
 import { cambio, contar } from './estado.mjs';
 import { recargar } from './acciones.mjs';
+import { marcarManual, esperarCargaSiCorresponde } from './frescura.mjs';
 
 const espera = ms => new Promise(r => setTimeout(r, ms));
 
@@ -39,8 +40,8 @@ export function vigilarCodigo(app) {
   const { estado, sitio } = app;
   if (app.dejarDeVigilar) { app.dejarDeVigilar(); app.dejarDeVigilar = null; }
   estado.necesitaCodigo = false;
-  if (estado.modo === 'live-server') return;
   if (!sitio.carpeta) {
+    if (estado.modo === 'live-server') return;   // Live Server recarga solo: no hace falta saber dónde está el código
     estado.necesitaCodigo = true;
     contar(app, 'aviso', t('sitio.sinCodigo'), [t('sitio.sinCodigoSolucion')]);
     return;
@@ -48,9 +49,11 @@ export function vigilarCodigo(app) {
   app.dejarDeVigilar = vigilar(sitio.carpeta, archivos => {
     const nombres = archivos.length > 3 ? t('sitio.archivosYMas', { lista: archivos.slice(0, 3).join(', '), n: archivos.length - 3 }) : archivos.join(', ');
     if (estado.fase !== 'corriendo') return;
-    if (estado.modo === 'manual') { contar(app, 'info', t('sitio.guardasteManual', { nombres })); return; }
+    if (estado.modo === 'manual') { contar(app, 'info', t('sitio.guardasteManual', { nombres })); marcarManual(app, archivos); return; }
     contar(app, 'info', t('sitio.guardaste', { nombres }));
-    recargar(app);
+    // Live Server recarga solo: acá solo se vigila que lo haya hecho. Si no, se recarga desde acá.
+    if (estado.modo === 'live-server') esperarCargaSiCorresponde(app, archivos);
+    else recargar(app);
   });
 }
 
@@ -85,6 +88,7 @@ async function actualizarOpciones(app) {
 export async function elegirEnPanel(app) {
   const { estado } = app;
   estado.fase = 'inicio';
+  estado.soltada = null;
   cambio(app);
   await actualizarOpciones(app);
   app.relojes.opciones = setInterval(() => actualizarOpciones(app), app.tiempos.opciones);
@@ -100,6 +104,7 @@ export async function elegirEnPanel(app) {
 export async function elegir(app, obtener) {
   if (!app.alElegirSitio) return { error: t('sitio.noSeEstaEligiendo') };
   const nuevo = await obtener();
+  app.estado.soltada = null;
   app.alElegirSitio(nuevo);
   return { mensaje: t('sitio.listo', { nombre: nuevo.nombre }) };
 }

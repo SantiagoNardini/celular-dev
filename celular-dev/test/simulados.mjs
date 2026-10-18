@@ -25,6 +25,7 @@ export class AdbSimulado extends EventEmitter {
     if (comando.startsWith('getprop ro.build.version.release')) return { codigo: 0, salida: '14' };
     if (comando.startsWith('pm path com.android.chrome')) return { codigo: 0, salida: this.tieneChrome ? 'package:/data/app/chrome/base.apk' : '' };
     if (comando.startsWith('dumpsys package com.android.chrome')) return { codigo: 0, salida: '    versionName=141.0.7390.122' };
+    if (comando.startsWith('dumpsys power')) return { codigo: 0, salida: this.pantalla === 'apagada' ? 'mWakefulness=Asleep' : 'mWakefulness=Awake' };
     const abrir = /am start .* -d '([^']+)' com\.android\.chrome/.exec(comando);
     if (abrir) {
       this.abiertas.push(abrir[1]);
@@ -104,6 +105,8 @@ export class ChromeSimulado extends EventEmitter {
   async recargar() {
     if (!this.conectado) throw new Error('no hay conexión con la pestaña del celular');
     this.recargas++;
+    // como el de verdad: al terminar de cargar avisa (con sinCarga = true, es la pantalla apagada o la pestaña trabada)
+    if (!this.sinCarga) setTimeout(() => this.emit('evento', 'Page.loadEventFired', {}), 5);
   }
 
   async evaluar(expresion) {
@@ -119,6 +122,8 @@ export class ChromeSimulado extends EventEmitter {
     if (this.demoraNitida) await new Promise(r => setTimeout(r, this.demoraNitida));
     return Buffer.from([0xff, 0xd8, 0xaa, 0xff, 0xd9]);
   }
+  async tamano(medidas) { (this.tamanos ||= []).push(medidas); }
+  async medidasPantalla() { return { ancho: 411, alto: 773 }; }
   async iniciarEspejo(opciones) { this.espejo = true; this.pedidosEspejo = [...(this.pedidosEspejo || []), opciones]; }
   detenerEspejo() { this.espejo = false; return Promise.resolve(); }
   async tocar(tipo, x, y, momento) { this.toques.push([tipo, x, y]); this.momentos = [...(this.momentos || []), momento]; }

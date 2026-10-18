@@ -31,6 +31,10 @@ export function estadoInicial({ carpetaProyecto, esProyecto, manual }) {
     primerExito: false,                // todavía no tocó el espejo: el panel le muestra qué hacer
     red: 'normal',                     // normal | lenta | sin-conexion: la red que se simula en el celular
     revision: null,                    // la última revisión del sitio: { hora, red, puntos }
+    tamano: 'real',                    // 'real' o el id de un tamaño de pantalla simulado (tamanos.mjs)
+    tamanos: [],                       // los tamaños que se pueden simular, con cuáles entran en la pantalla real
+    desactualizado: null,              // el celular no muestra lo último que se guardó: { motivo, hora }
+    soltada: null,                     // una carpeta arrastrada al panel que está en varios lugares: { nombre, candidatas }
     revisando: false,
     recargas: 0,
     errores: 0,

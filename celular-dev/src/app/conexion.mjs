@@ -3,6 +3,8 @@
 import { t } from '../idioma.mjs';
 import { cambio, contar, registrarAviso } from './estado.mjs';
 import { reanudarEspejo } from './espejo.mjs';
+import { alCargar } from './frescura.mjs';
+import { tamanoDe, paraChrome, listaParaPanel } from './tamanos.mjs';
 
 const espera = ms => new Promise(r => setTimeout(r, ms));
 
@@ -33,8 +35,14 @@ export async function conectarConsola(app, intentos = 20) {
         await chrome.conectar(pestana);
         estado.consola = true;
         recordarPagina(app, pestana.url);
-        // la red simulada dura lo que dura la conexión: al reconectar se vuelve a pedir
+        // el tamaño de la página en el celular, sin nada simulado (la conexión es nueva): sirve para saber qué
+        // tamaños de pantalla se pueden simular en vivo
+        try { app.pantallaReal = await chrome.medidasPantalla(); } catch { /* sin eso, se muestran todos como en vivo */ }
+        estado.tamanos = listaParaPanel(app.pantallaReal);
+        // la red y el tamaño simulados duran lo que dura la conexión: al reconectar se vuelven a pedir
         if (estado.red !== 'normal') await chrome.red(estado.red).catch(() => {});
+        const simulado = tamanoDe(estado.tamano);
+        if (simulado) await chrome.tamano(paraChrome(simulado)).catch(() => {});
         cambio(app);
         reanudarEspejo(app);
         return true;
@@ -119,7 +127,8 @@ export function escucharChrome(app, alCuadro) {
     if (metodo === 'Page.frameNavigated' && params.frame && !params.frame.parentId) recordarPagina(app, params.frame.url + (params.frame.urlFragment || ''));
     else if (metodo === 'Page.navigatedWithinDocument') recordarPagina(app, params.url);
     const aviso = app.traductor.traducir(metodo, params);
-    if (!aviso || aviso.tipo === 'carga') return;
+    if (aviso && aviso.tipo === 'carga') { alCargar(app); return; }   // el celular terminó de cargar la página
+    if (!aviso) return;
     registrarAviso(app, aviso);
   });
   chrome.on('cuadro', alCuadro);

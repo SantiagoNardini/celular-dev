@@ -13,7 +13,8 @@ import { iniciarPanel, PUERTO_PANEL } from '../panel.mjs';
 import { abrirNavegador, abrirConElSistema } from '../sistema.mjs';
 import { descargarAdb } from '../instalar-adb.mjs';
 import { hayAccesos } from '../accesos.mjs';
-import { carpetaDatos, preferencia } from '../lugares.mjs';
+import { carpetaDatos, preferencia, leerConfig } from '../lugares.mjs';
+import { buscarCarpeta, raicesDeBusqueda } from '../buscar-carpeta.mjs';
 import { t, textosPanel } from '../idioma.mjs';
 import { estadoInicial, cambio, contar } from './estado.mjs';
 import { obtenerSitio, aplicarSitio } from './sitio.mjs';
@@ -40,14 +41,15 @@ export function crearApp({ opciones = {}, cwd = process.cwd(), deps = {}, tiempo
     deps: {
       buscarAdb, crearAdb: ruta => new Adb(ruta), crearChrome: puerto => new Chrome(puerto), iniciarPanel, abrirNavegador,
       abrirConElSistema, elegirCarpeta, descargarAdb, hayAccesos, terminar: codigo => process.exit(codigo),
+      buscarCarpeta, raicesBusqueda: () => raicesDeBusqueda(leerConfig().recientes.map(r => dirname(r))),
       servidores: { conocidos: PUERTOS_CONOCIDOS, puertoAbierto, detectar },
       ...deps
     },
-    tiempos: { opciones: 3000, servidor: 3000, reintento: 2000, pestana: 500, adb: 3000, chrome: 5000, nitido: 300, ...tiempos },
+    tiempos: { opciones: 3000, servidor: 3000, reintento: 2000, pestana: 500, adb: 3000, chrome: 5000, nitido: 300, frescuraVivo: 8000, frescuraLive: 10000, ...tiempos },
     interno: { cerrando: false, inicio: Date.now(), modoElegido: estado.modo, capturas: [], impreso: new Map(), servidoresVistos: new Map() },
     espejo: espejoInicial(),
     relojes: {},
-    adb: null, chrome: null, traductor: null, panel: null, sitio: null, puertoDevtools: 0,
+    adb: null, chrome: null, traductor: null, panel: null, sitio: null, puertoDevtools: 0, ultimaCarga: 0, pantallaReal: null,
     dejarDeVigilar: null, alElegirSitio: null, rearmando: null
   };
   // la primera vez, el panel le muestra qué hacer con el espejo

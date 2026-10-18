@@ -85,3 +85,20 @@ test('un toque lleva la hora en segundos, como la pide Chrome', async () => {
   assert.deepEqual(enviado[1].touchPoints, []);
   assert.equal(enviado[1].timestamp, undefined);
 });
+
+test('simular otra pantalla: ancho, alto y densidad; sin medidas vuelve a la real', async () => {
+  const chrome = new Chrome(0);
+  const pedidos = [];
+  chrome.enviar = async (metodo, params) => { pedidos.push([metodo, params]); };
+  await chrome.tamano({ ancho: 360, alto: 640, densidad: 0 });
+  assert.deepEqual(pedidos.at(-1), ['Emulation.setDeviceMetricsOverride', { width: 360, height: 640, deviceScaleFactor: 0, mobile: true }]);
+  await chrome.tamano(null);
+  assert.equal(pedidos.at(-1)[0], 'Emulation.clearDeviceMetricsOverride');
+});
+
+test('el tamaño de la página en el celular sale de la parte visible, redondeado', async () => {
+  const chrome = new Chrome(0);
+  chrome.enviar = async () => ({ cssVisualViewport: { clientWidth: 411.43, clientHeight: 773.14 } });
+  assert.deepEqual(await chrome.medidasPantalla(), { ancho: 411, alto: 773 });
+});
+

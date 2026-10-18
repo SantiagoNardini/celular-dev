@@ -12,7 +12,10 @@ import { abrirChromeInspect } from '../sistema.mjs';
 import { REDES, nombreRed, cambio, contar } from './estado.mjs';
 import { abrirEnCelular, conectarConsola, llevarSitioAlCelular } from './conexion.mjs';
 import { sitioDeServidor, sitioDeCarpeta, vigilarCodigo, elegirEnPanel, aplicarSitio, elegir } from './sitio.mjs';
-import { tocar, marcarPrimerExito } from './espejo.mjs';
+import { tocar, marcarPrimerExito, olvidarImagen, reanudarEspejo } from './espejo.mjs';
+import { esperarCarga } from './frescura.mjs';
+import { tamanoDe, paraChrome, cabe } from './tamanos.mjs';
+import { limpiarSoltada } from '../buscar-carpeta.mjs';
 
 const sello = (ui, d) => `${ui.fecha(d)}_${ui.hora(d).replace(/:/g, '-')}`;
 
@@ -28,6 +31,8 @@ export async function recargar(app, motivo = '') {
   try {
     await chrome.recargar();
     estado.recargas++;
+    // el celular tiene que terminar de cargar: si no lo hace, se avisa
+    esperarCarga(app, app.tiempos.frescuraVivo);
     contar(app, 'ok', t('accion.recargado', { motivo }));
     return { mensaje: t('accion.recargadoCorto') };
   } catch (error) {
@@ -127,6 +132,7 @@ export function generarInforme(app) {
     errores: estado.avisos,
     revision: estado.revision,
     red: estado.red,
+    tamano: tamanoDe(estado.tamano),
     capturas: app.interno.capturas,
     fecha: `${ui.fecha(d)} ${ui.hora(d)}`
   });
@@ -191,6 +197,52 @@ function cambiarIdioma(app, valor) {
   return { mensaje: t('accion.idiomaCambiado') };
 }
 
+// Simula otra pantalla en el celular (o vuelve a la real): la página se ve como en ese tamaño.
+async function cambiarTamano(app, id) {
+  const { estado, chrome } = app;
+  if (estado.fase !== 'corriendo') return { error: t('accion.noListo') };
+  const medidas = id === 'real' ? null : tamanoDe(id);
+  if (id !== 'real' && !medidas) return { error: t('accion.tamanoDesconocido') };
+  // Chrome no puede mostrar un tamaño más grande que la pantalla real: repite el contenido en el resto
+  if (medidas && !cabe(medidas, app.pantallaReal)) return { error: t('accion.tamanoNoCabe', { ancho: medidas.ancho, alto: medidas.alto, realAncho: app.pantallaReal.ancho, realAlto: app.pantallaReal.alto }) };
+  if (!chrome.conectado && !(await conectarConsola(app, 4))) return { error: t('accion.sinConexionPestana') };
+  try {
+    await chrome.tamano(medidas && paraChrome(medidas));
+    estado.tamano = medidas ? medidas.id : 'real';
+    // lo que se mostraba ya no vale, y los toques usan las medidas nuevas hasta que llegue la primera imagen
+    olvidarImagen(app);
+    const medida = medidas || app.pantallaReal;
+    if (medida) { app.espejo.ancho = medida.ancho; app.espejo.alto = medida.alto; }
+    reanudarEspejo(app);
+    cambio(app);
+    if (!medidas) { contar(app, 'ok', t('accion.tamanoReal')); return { mensaje: t('accion.tamanoReal') }; }
+    contar(app, 'aviso', t('accion.tamanoSimulado', { ancho: medidas.ancho, alto: medidas.alto }));
+    return { mensaje: t('accion.tamanoCorto', { ancho: medidas.ancho, alto: medidas.alto }) };
+  } catch (error) {
+    contar(app, 'error', t('accion.noTamano', { detalle: error.message }));
+    return { error: t('accion.noTamanoCorto') };
+  }
+}
+
+// Una carpeta arrastrada al panel: se la busca en el disco. Una sola, se muestra; varias, se pregunta cuál;
+// ninguna, se abre la ventana para elegirla.
+async function soltarCarpeta(app, valor) {
+  const { estado } = app;
+  if (!app.alElegirSitio) return { error: t('sitio.noSeEstaEligiendo') };
+  const soltada = limpiarSoltada(valor);
+  if (!soltada) return { error: t('soltar.noEsCarpeta') };
+  const candidatas = await app.deps.buscarCarpeta(soltada, { raices: app.deps.raicesBusqueda() });
+  if (candidatas.length === 1) return elegir(app, () => sitioDeCarpeta(app, candidatas[0].ruta));
+  if (candidatas.length > 1) {
+    estado.soltada = { nombre: soltada.nombre, candidatas: candidatas.map(c => ({ ruta: c.ruta })) };
+    cambio(app);
+    return { mensaje: t('soltar.variasCorto', { n: candidatas.length }) };
+  }
+  const ruta = await app.deps.elegirCarpeta(t('carpeta.tituloSoltada', { nombre: soltada.nombre }));
+  if (!ruta) return { mensaje: t('accion.ningunaCarpeta') };
+  return elegir(app, () => sitioDeCarpeta(app, ruta));
+}
+
 export async function alAccion(app, accion, valor) {
   const { estado, sitio } = app;
   switch (accion) {
@@ -236,6 +288,13 @@ export async function alAccion(app, accion, valor) {
     case 'informe': return generarInforme(app);
     case 'tocar': return tocar(app, valor);
     case 'entendido': marcarPrimerExito(app); return {};
+    case 'tamano': return cambiarTamano(app, valor);
+    case 'soltar-carpeta': return soltarCarpeta(app, valor);
+    case 'usar-soltada': {
+      const c = estado.soltada && estado.soltada.candidatas[parseInt(valor, 10)];
+      if (!c) return { error: t('accion.carpetaYaNo') };
+      return elegir(app, () => sitioDeCarpeta(app, c.ruta));
+    }
     case 'abrir-en-pc': {
       // la dirección sale del estado, no de lo que mande el panel: solo se abre lo que el celular tiene abierto
       const url = estado.celular.url;

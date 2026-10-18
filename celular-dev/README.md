@@ -38,6 +38,8 @@ Abrí el lanzador. Se abre el panel en tu navegador (`http://localhost:47823`). 
 - Las **capturas, informes y el registro** quedan en `Documentos/celular-dev`.
 - Recuerda las **carpetas que usaste**, para elegirlas con un clic la próxima vez.
 - Con un **servidor** (Live Server, `npm run dev`…), si no sabe dónde está tu código te lo pregunta una vez, para recargar al guardar, y lo recuerda. Live Server no lo necesita: recarga solo.
+- **Arrastrar una carpeta** hasta el panel (en la pantalla de inicio) la muestra. El navegador no dice dónde está una carpeta que se arrastra, solo su nombre y lo que tiene adentro: celular-dev la busca en el Escritorio, Documentos, Descargas y tus carpetas de proyectos, y la reconoce por su contenido. Si hay varias iguales, te deja elegir; si no la encuentra, abre la ventana para elegirla.
+- **Avisa si el celular no se actualizó** después de guardar: si la pantalla está apagada o Chrome quedó en segundo plano, el panel lo dice (y distingue la pantalla apagada). En modo manual avisa que hay cambios sin recargar; con Live Server, si conoce tu carpeta de código, vigila que el celular se recargue.
 
 También se puede abrir desde una terminal, por ejemplo dentro de un proyecto:
 
@@ -66,6 +68,7 @@ Para tener el comando `celular` en cualquier carpeta, una vez dentro de `celular
 |---|---|
 | El celular (a la derecha) | La pantalla en vivo. Clic para tocar, arrastrar para deslizar, la rueda para bajar; con clic en la imagen, lo que escribís (o pegás) va al celular |
 | La dirección (debajo del celular) | La página que tiene abierta el celular ahora, como la barra de un navegador: se puede copiar o abrir en la computadora para compararla. Se pone en ámbar si el celular salió del sitio que elegiste |
+| Pantalla (debajo del celular) | Simula otro tamaño de pantalla en el celular: 320×568, 360×640, 375×667… Los toques usan esas medidas. Chrome solo dibuja lo que cabe en la pantalla física, así que los tamaños más grandes que la de tu celular (una tablet, el celular de costado) aparecen en gris. Se vuelve al tamaño normal al cerrar |
 | Recargar | Recarga el sitio en el celular |
 | Revisar sitio | Revisa el sitio en el celular: desborde a lo ancho, botones chicos, contraste, imágenes sin alt, texto chico, controles sin nombre, tiempos y peso. Lo encontrado entra en el informe |
 | Red del celular | Normal, 3G lenta o sin conexión: simula esa red y recarga, para ver cómo carga en la calle |
@@ -108,7 +111,7 @@ Todo lo que se muestra está en `src/textos/es.mjs` y `src/textos/en.mjs`, con l
 ### Cómo está armado
 
 - `bin/celular.mjs` lee las opciones y arranca.
-- `src/app/` es el programa: `index.mjs` (arranque y salida), `estado.mjs` (lo que dibuja el panel), `sitio.mjs` (qué mostrar), `conexion.mjs` (celular y Chrome), `acciones.mjs` (botones y teclas), `espejo.mjs` y `teclas.mjs`. Recibe ADB, Chrome, el panel y el sistema por parámetro (`deps`): así las pruebas usan los simulados.
+- `src/app/` es el programa: `index.mjs` (arranque y salida), `estado.mjs` (lo que dibuja el panel), `sitio.mjs` (qué mostrar), `conexion.mjs` (celular y Chrome), `acciones.mjs` (botones y teclas), `espejo.mjs`, `frescura.mjs` (¿se actualizó el celular?), `tamanos.mjs` (tamaños de pantalla) y `teclas.mjs`. Recibe ADB, Chrome, el panel y el sistema por parámetro (`deps`): así las pruebas usan los simulados.
 - `src/` tiene las piezas: `adb.mjs`, `chrome.mjs`, `panel.mjs` (+ `panel/`), `estatico.mjs`, `vigia.mjs`, `consola.mjs`, `explicar.mjs`, `revision.mjs`, `informe.mjs`, `editor.mjs`, `carpeta.mjs`, `accesos.mjs`, `instalar-adb.mjs`, `lugares.mjs`, `sistema.mjs`, `idioma.mjs`, `pantalla.mjs`.
 
 ### Armar los paquetes y publicar una versión
@@ -133,7 +136,7 @@ git push origin v0.3.1
 - `adb reverse` hace que el `localhost` del celular llegue a la computadora: el sitio se ve como en la computadora y cuenta como página segura (funcionan cámara, ubicación, service workers).
 - Para una carpeta, un servidor propio la sirve en un puerto libre, siempre con la última versión guardada.
 - `adb track-devices` avisa cuando el celular se conecta o se desconecta, sin preguntar a cada rato. Si ADB se reinicia, los túneles se rearman solos.
-- El protocolo de Chrome DevTools trae los errores y la consola, y permite recargar, sacar capturas, mandar la pantalla en vivo (`Page.startScreencast`, que el panel recibe como video MJPEG en un `<img>`) y los toques (`Input.dispatchTouchEvent`).
+- El protocolo de Chrome DevTools trae los errores y la consola, y permite recargar, sacar capturas, mandar la pantalla en vivo (`Page.startScreencast`), simular otro tamaño de pantalla (`Emulation.setDeviceMetricsOverride`) y los toques (`Input.dispatchTouchEvent`). El panel lee el flujo de imágenes y las dibuja en un `<canvas>`: con un `<img>`, Chrome muestra cada imagen recién cuando empieza la siguiente, y con la pantalla quieta la última (la nítida) no se vería.
 - El panel escucha solo en tu computadora (127.0.0.1) y rechaza pedidos de otras páginas.
 - En reposo casi no consume: el servidor se vigila abriendo una conexión al puerto, sin pedirle páginas; y el espejo, a unas 12 imágenes por segundo como mucho, solo mientras alguien mira.
 - Una sola copia a la vez; al salir borra solo los túneles que abrió.

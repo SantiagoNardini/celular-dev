@@ -58,3 +58,9 @@ test('en inglés, para quien usa el panel en inglés', () => {
     elegirIdioma('es');
   }
 });
+
+test('cuenta la pantalla simulada, si la hay', () => {
+  const con = armarInforme({ ...base, errores: [], tamano: { ancho: 360, alto: 640 } });
+  assert.match(con, /Pantalla simulada: 360 × 640 px/);
+  assert.doesNotMatch(armarInforme({ ...base, errores: [] }), /Pantalla simulada/);
+});

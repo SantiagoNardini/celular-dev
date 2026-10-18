@@ -115,6 +115,13 @@ function dibujarCabecera() {
 
 // ---------- Inicio ----------
 
+// Una carpeta arrastrada que está en varios lugares: se pregunta cuál es.
+function soltadaHtml(e) {
+  if (!e.soltada) return '';
+  return `<section class="tarjeta" style="margin-bottom:16px"><h2 style="margin-bottom:6px">${tr('soltar.varias', { nombre: e.soltada.nombre })}</h2>
+    ${e.soltada.candidatas.map((c, i) => `<div class="fila-servidor" title="${esc(c.ruta)}"><span>${esc(rutaCorta(c.ruta))}</span><button class="chico" data-accion="usar-soltada" data-valor="${i}">${tr('inicio.usar')}</button></div>`).join('')}</section>`;
+}
+
 function vistaInicio() {
   const { carpeta, servidores, recientes } = estado.opciones;
   const usadas = recientes.length
@@ -129,11 +136,13 @@ function vistaInicio() {
   return `
     <h1>${tr('inicio.titulo')}</h1>
     <p class="sub">${tr('inicio.sub')}</p>
+    ${soltadaHtml(estado)}
     <div class="opciones">
       <section class="tarjeta opcion ${servidores.length ? '' : 'destacada'}">
         <div class="icono">${ic('carpeta')}</div>
         <h2>${tr('inicio.carpetaTitulo')}</h2>
         <p class="sub">${tr('inicio.carpetaSub')}</p>
+        <p class="nota" style="margin:-8px 0 12px">${tr('inicio.arrastra')}</p>
         ${carpeta.tieneSitio ? `<p class="nota" style="margin-bottom:10px" title="${esc(carpeta.ruta)}">${tr('inicio.hayUnSitio', { ruta: rutaCorta(carpeta.ruta) })}</p>` : ''}
         <div class="botones">${usarEsta}<button ${carpeta.tieneSitio ? '' : 'class="principal"'} data-accion="elegir-carpeta">${tr('inicio.elegirCarpeta')}</button></div>
         ${usadas}
@@ -280,6 +289,8 @@ function vistaPanel() {
         <p class="simple">${conCodigo(p.simple)}</p>${p.ejemplos.length ? `<p class="tecnico">${p.ejemplos.map(esc).join(' · ')}</p>` : ''}</div></div>`).join(''),
     errores: `<h2>${tr('panel.erroresTitulo')} ${s.avisos.length ? `<span class="cuenta">${s.avisos.length}</span><button class="chico fantasma" data-accion="limpiar">${ic('limpiar')}${tr('panel.limpiar')}</button>` : ''}</h2>${errores}`,
     actividad: `<h2>${tr('panel.actividad')}</h2>${actividad}`,
+    desactualizado: avisoDesactualizado(s),
+    tamano: selectorTamano(s),
     bienvenida: s.primerExito && s.espejo ? `<section class="tarjeta bienvenida">
         <span class="marca-ok">${ic('tilde')}</span>
         <div><h2>${tr('bienvenida.titulo')}</h2><p>${tr('bienvenida.texto')}</p></div>
@@ -295,6 +306,25 @@ function vistaPanel() {
       </div>
       <p class="estado-espejo">${s.espejo ? `<span class="vivo">${tr('espejo.enVivo')}</span> · ${tr('espejo.ayuda')}` : tr('espejo.titulo')} · ${modo}${s.red !== 'normal' ? ` · <b class="alerta-texto">${tr('panel.red')} ${nombreRed(s.red)}</b>` : ''}</p>`
   };
+}
+
+// Si el celular no muestra lo último que se guardó: un aviso, con el botón para recargar.
+function avisoDesactualizado(s) {
+  const d = s.desactualizado;
+  if (!d) return '';
+  const texto = d.motivo === 'pantalla-apagada' ? tr('frescura.pantallaApagada') : d.motivo === 'manual' ? tr('frescura.manual') : tr('frescura.sinCarga');
+  return `<div class="banda${d.motivo === 'manual' ? ' suave' : ''}" role="status"><p>${texto}</p>
+    <button class="chico" data-accion="recargar">${ic('recargar')}${tr('panel.recargar')}</button></div>`;
+}
+
+// Probar otros tamaños de pantalla sin otro celular. Los que no entran en la pantalla real no se pueden
+// mostrar (Chrome repite el contenido): quedan en la lista, en gris.
+function selectorTamano(s) {
+  if (!s.tamanos.length) return '';
+  const opciones = [`<option value="real"${s.tamano === 'real' ? ' selected' : ''}>${tr('tamano.real')}</option>`]
+    .concat(s.tamanos.map(t => `<option value="${t.id}"${s.tamano === t.id ? ' selected' : ''}${t.cabe ? '' : ' disabled'}>${esc(tr(`tamano.${t.id}`))} · ${t.ancho}×${t.alto}${t.cabe ? '' : ` · ${esc(tr('tamano.noCabe'))}`}</option>`)).join('');
+  return `<label class="selector"><span>${tr('tamano.etiqueta')}</span><select id="tamano">${opciones}</select></label>
+    ${s.tamanos.some(t => !t.cabe) ? `<p class="nota-tamano">${tr('tamano.nota')}</p>` : ''}`;
 }
 
 // La página que tiene abierta el celular, como la barra de direcciones de un navegador: se puede copiar, o
@@ -316,6 +346,7 @@ function direccionDelCelular(s) {
 // está en el esqueleto: así la imagen en vivo no se corta cada vez que cambia algo.
 const ESQUELETOS = {
   corriendo: `<div data-zona="oferta"></div><div class="tablero"><div>
+      <div data-zona="desactualizado"></div>
       <div data-zona="bienvenida"></div>
       <div class="metricas" data-zona="metricas"></div>
       <div data-zona="botones"></div>
@@ -324,10 +355,11 @@ const ESQUELETOS = {
       <section class="tarjeta lista actividad" data-zona="actividad"></section>
     </div><div>
       <div class="telefono espejo"><div class="pantalla">
-        <img id="espejo" tabindex="0" draggable="false" alt="">
+        <canvas id="espejo" tabindex="0" role="img"></canvas>
         <div class="tapa" data-zona="espejoTapa"></div>
         <div class="sugerencia" data-zona="espejoSugerencia"></div>
       </div></div>
+      <div data-zona="tamano"></div>
       <div data-zona="direccion"></div>
       <div data-zona="pie"></div>
     </div></div>`,
@@ -362,14 +394,76 @@ function dibujar() {
     app.querySelector(`[data-zona="${zona}"]`).innerHTML = html;
     dibujado.set(zona, html);
   }
-  const imagen = document.getElementById('espejo');
-  if (imagen) imagen.alt = tr('espejo.alt');
+  const lienzo = document.getElementById('espejo');
+  if (lienzo) lienzo.setAttribute('aria-label', tr('espejo.alt'));
   actualizarEspejo();
 }
 
 // ---------- Espejo ----------
 // La imagen se conecta solo mientras todo anda y esta pestaña se ve: en otra pestaña o minimizada, se
 // suelta, y el celular deja de mandar cuadros.
+
+// ---------- Espejo ----------
+// Las imágenes llegan por un flujo (multipart) que se lee acá y se dibuja en un <canvas> apenas llega cada una.
+// Un <img> con ese mismo flujo muestra cada imagen recién cuando empieza la siguiente (medido en Chrome): con
+// la pantalla quieta, la última no se vería nunca, y las demás llegarían una imagen tarde. Acá se dibuja
+// siempre la más nueva, y si llegan varias juntas, solo la última.
+const decodificador = new TextDecoder('latin1');
+const juntar = (a, b) => { const r = new Uint8Array(a.length + b.length); r.set(a); r.set(b, a.length); return r; };
+let controlEspejo = null;
+
+async function leerEspejo(lienzo, ancho) {
+  const control = new AbortController();
+  controlEspejo = control;
+  const ctx = lienzo.getContext('2d');
+  let siguiente = null;
+  let dibujando = false;
+  const dibujarSiguiente = async () => {
+    if (dibujando) return;
+    dibujando = true;
+    while (siguiente) {
+      const bytes = siguiente;
+      siguiente = null;
+      try {
+        const mapa = await createImageBitmap(new Blob([bytes], { type: 'image/jpeg' }));
+        if (control.signal.aborted) { mapa.close(); break; }
+        if (lienzo.width !== mapa.width || lienzo.height !== mapa.height) { lienzo.width = mapa.width; lienzo.height = mapa.height; }
+        ctx.drawImage(mapa, 0, 0);
+        mapa.close();
+        lienzo.classList.add('activa');
+        lienzo.parentElement.classList.add('con-imagen');
+      } catch { /* una imagen rota: la siguiente la reemplaza */ }
+    }
+    dibujando = false;
+  };
+  try {
+    const respuesta = await fetch(`/api/espejo.mjpg?ancho=${ancho}`, { signal: control.signal, cache: 'no-store' });
+    const lector = respuesta.body.getReader();
+    let pendiente = new Uint8Array(0);
+    for (;;) {
+      const { value, done } = await lector.read();
+      if (done) break;
+      pendiente = juntar(pendiente, value);
+      // cada parte: "Content-Type: image/jpeg\r\nContent-Length: N\r\n\r\n" y después los N bytes de la imagen
+      for (;;) {
+        const m = /Content-Length: (\d+)\r\n\r\n/.exec(decodificador.decode(pendiente.subarray(0, 300)));
+        if (!m) break;
+        const inicio = m.index + m[0].length;
+        const largo = +m[1];
+        if (pendiente.length < inicio + largo) break;
+        siguiente = pendiente.slice(inicio, inicio + largo);
+        pendiente = pendiente.subarray(inicio + largo);
+        dibujarSiguiente();
+      }
+    }
+  } catch { /* se cortó, o se pidió soltarlo */ }
+  // si se cortó sin que se pidiera (el programa se reinició, por ejemplo), se vuelve a conectar
+  if (controlEspejo === control) {
+    controlEspejo = null;
+    delete lienzo.dataset.conectada;
+    if (!cerrado) setTimeout(actualizarEspejo, 1500);
+  }
+}
 
 function actualizarEspejo() {
   const imagen = document.getElementById('espejo');
@@ -379,7 +473,7 @@ function actualizarEspejo() {
     const ancho = anchoEnPantalla(imagen);
     imagen.dataset.conectada = '1';
     imagen.dataset.ancho = ancho;
-    imagen.src = `/api/espejo.mjpg?ancho=${ancho}&${Date.now()}`;
+    leerEspejo(imagen, ancho);
   } else if (!quiere && imagen.dataset.conectada) {
     soltarEspejo();
   }
@@ -399,15 +493,15 @@ window.addEventListener('resize', () => {
 });
 
 function soltarEspejo() {
+  if (controlEspejo) { const c = controlEspejo; controlEspejo = null; c.abort(); }
   const imagen = document.getElementById('espejo');
   if (!imagen || !imagen.dataset.conectada) return;
   delete imagen.dataset.conectada;
-  imagen.removeAttribute('src');
+  imagen.classList.remove('activa');
+  imagen.parentElement.classList.remove('con-imagen');
 }
 
 document.addEventListener('visibilitychange', actualizarEspejo);
-// si se corta (por ejemplo, se reinició el programa), se vuelve a conectar con el próximo cambio de estado
-document.addEventListener('error', e => { if (e.target.id === 'espejo') delete e.target.dataset.conectada; }, true);
 
 // Los toques van en orden y de a uno: si llegan muchos movimientos juntos, solo se manda el último.
 let cola = Promise.resolve();
@@ -486,6 +580,60 @@ document.addEventListener('paste', e => {
   const texto = e.clipboardData.getData('text');
   if (texto) { e.preventDefault(); tocar({ tipo: 'texto', texto }); }
 });
+
+// ---------- Arrastrar una carpeta ----------
+// El navegador no dice dónde está una carpeta que se suelta, solo su nombre y lo que tiene adentro: eso se
+// le manda al programa, que la busca en el disco y la reconoce por su contenido.
+
+// Lee la carpeta soltada: nombre, archivos (con su tamaño) y carpetas del primer nivel. Tiene que pedir la
+// entrada en el mismo instante en que se suelta (después, el navegador ya no la deja leer).
+async function leerCarpetaSoltada(dt) {
+  const item = dt && dt.items ? [...dt.items].find(i => i.kind === 'file') : null;
+  const entrada = item && item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
+  if (!entrada || !entrada.isDirectory) return null;
+  const lector = entrada.createReader();
+  const entradas = [];
+  for (;;) {
+    const lote = await new Promise((ok, mal) => lector.readEntries(ok, mal));
+    if (!lote.length) break;
+    entradas.push(...lote);
+  }
+  const archivos = await Promise.all(entradas.filter(e => e.isFile).slice(0, 300).map(e => new Promise(ok =>
+    e.file(f => ok({ nombre: e.name, tamano: f.size }), () => ok({ nombre: e.name, tamano: -1 })))));
+  return { nombre: entrada.name, archivos, carpetas: entradas.filter(e => e.isDirectory).map(e => e.name).slice(0, 300) };
+}
+
+const capaSoltar = document.getElementById('soltar');
+let arrastres = 0;
+const traeArchivos = e => !!e.dataTransfer && [...e.dataTransfer.types].includes('Files');
+document.addEventListener('dragenter', e => {
+  if (!traeArchivos(e)) return;
+  e.preventDefault();
+  arrastres++;
+  if (estado && estado.fase === 'inicio') { document.getElementById('soltar-texto').textContent = tr('soltar.titulo'); capaSoltar.hidden = false; }
+});
+document.addEventListener('dragover', e => { if (traeArchivos(e)) e.preventDefault(); });
+document.addEventListener('dragleave', e => {
+  if (!traeArchivos(e)) return;
+  arrastres = Math.max(0, arrastres - 1);
+  if (!arrastres) capaSoltar.hidden = true;
+});
+document.addEventListener('drop', e => {
+  if (!traeArchivos(e)) return;
+  // siempre se evita que el navegador abra lo soltado (saldría del panel)
+  e.preventDefault();
+  arrastres = 0;
+  capaSoltar.hidden = true;
+  if (!estado || estado.fase !== 'inicio') { avisar(tr('soltar.soloInicio'), true); return; }
+  leerCarpetaSoltada(e.dataTransfer).catch(() => null).then(carpeta => {
+    if (!carpeta) return avisar(tr('soltar.noEsCarpeta'), true);
+    if (!carpeta.archivos.some(a => a.nombre.toLowerCase() === 'index.html')) return avisar(tr('soltar.sinIndex', { nombre: carpeta.nombre }), true);
+    accion('soltar-carpeta', carpeta);
+  });
+});
+
+// El selector de tamaño de pantalla
+document.addEventListener('change', e => { if (e.target.id === 'tamano') accion('tamano', e.target.value); });
 
 // ---------- Conexión con el programa ----------
 

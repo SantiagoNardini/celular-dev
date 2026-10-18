@@ -168,6 +168,19 @@ export class Chrome extends EventEmitter {
     return Buffer.from(r.data, 'base64');
   }
 
+  // Simula otra pantalla: la página se arma y responde con ese ancho y alto (medidas: { ancho, alto, densidad }).
+  // Sin medidas, vuelve a la real. Dura lo que dura la conexión con la pestaña: al reconectar hay que volver a pedirla.
+  tamano(medidas) {
+    if (!medidas) return this.enviar('Emulation.clearDeviceMetricsOverride');
+    return this.enviar('Emulation.setDeviceMetricsOverride', { width: medidas.ancho, height: medidas.alto, deviceScaleFactor: medidas.densidad, mobile: true });
+  }
+
+  // El tamaño de la página en el celular (sin nada simulado), para saber qué tamaños entran en su pantalla.
+  async medidasPantalla() {
+    const { cssVisualViewport: v } = await this.enviar('Page.getLayoutMetrics');
+    return { ancho: Math.round(v.clientWidth), alto: Math.round(v.clientHeight) };
+  }
+
   escribir(texto) {
     return this.enviar('Input.insertText', { text: texto }, 3000);
   }

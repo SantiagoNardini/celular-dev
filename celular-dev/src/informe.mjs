@@ -3,7 +3,7 @@
 import { t } from './idioma.mjs';
 
 // red y revision.red: normal | lenta | sin-conexion
-export function armarInforme({ sitio, celular, errores, revision = null, red = 'normal', capturas, fecha }) {
+export function armarInforme({ sitio, celular, errores, revision = null, red = 'normal', tamano = null, capturas, fecha }) {
   const graves = errores.filter(e => e.nivel === 'error');
   const avisos = errores.filter(e => e.nivel === 'aviso');
   const r = [];
@@ -19,6 +19,7 @@ export function armarInforme({ sitio, celular, errores, revision = null, red = '
   if (celular.navegador) r.push(`- ${t('informe.navegador')}: ${celular.navegador}`);
   if (celular.pantalla) r.push(`- ${t('informe.pantalla')}: ${celular.pantalla}`);
   if (red !== 'normal') r.push(`- ${t('informe.redSimulada')}: ${t(`red.${red}`)}`);
+  if (tamano) r.push(`- ${t('informe.pantallaSimulada')}: ${tamano.ancho} × ${tamano.alto} px`);
   r.push('');
   const problemasRevision = revision ? revision.puntos.filter(p => p.nivel !== 'ok') : [];
   if (!errores.length && !problemasRevision.length) {

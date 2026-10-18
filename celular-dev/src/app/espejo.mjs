@@ -1,13 +1,28 @@
 // El espejo: la pantalla del sitio en el celular, en vivo dentro del panel, y tocarla desde la PC.
 //
-// Chrome manda cuadros JPEG (Page.startScreencast) y el panel los recibe como un video MJPEG (una imagen
-// que se reemplaza sola, "multipart/x-mixed-replace"), que el navegador muestra en un <img> sin nada más.
+// Chrome manda cuadros JPEG (Page.startScreencast) y el panel los recibe como un flujo multipart (cada parte,
+// una imagen con su largo), que lee y dibuja en un <canvas>. Con un <img> no sirve: Chrome muestra cada imagen
+// recién cuando empieza la siguiente.
 // Solo se piden cuadros mientras haya un panel mirando: con el panel cerrado o en otra pestaña, el celular
 // no trabaja de más.
 import { cambio } from './estado.mjs';
 import { guardarPreferencia } from '../lugares.mjs';
+import { tamanoDe } from './tamanos.mjs';
 
 const LIMITE = '--cuadro';
+
+// Ancho y alto de un JPEG (lo dice el marcador SOF), o null si no se puede leer.
+export function medidaJpeg(b) {
+  let i = 2;
+  while (i + 9 < b.length) {
+    if (b[i] !== 0xff) { i++; continue; }
+    const marca = b[i + 1];
+    if (marca >= 0xc0 && marca <= 0xc3) return { ancho: b.readUInt16BE(i + 7), alto: b.readUInt16BE(i + 5) };
+    if (marca === 0xd8 || marca === 0x01 || (marca >= 0xd0 && marca <= 0xd7) || marca === 0xff) { i += marca === 0xff ? 1 : 2; continue; }
+    i += 2 + b.readUInt16BE(i + 2);
+  }
+  return null;
+}
 
 // La primera vez que toca el espejo, el aviso de bienvenida se va y no vuelve a salir.
 export function marcarPrimerExito(app) {
@@ -78,17 +93,36 @@ function detenerEspejo(app) {
   if (app.chrome && app.chrome.conectado) app.chrome.detenerEspejo();
 }
 
-// Al reconectar con la pestaña, el pedido de cuadros se perdió: se vuelve a hacer si alguien mira.
+// Se vuelve a pedir la imagen con lo que corresponda ahora: después de reconectar con la pestaña (el pedido se
+// perdió), con otro ancho, o con otro tamaño de pantalla simulado.
 export function reanudarEspejo(app) {
-  app.espejo.activo = false;
+  const { espejo, chrome } = app;
+  clearTimeout(app.relojes.nitido);
+  if (espejo.activo && chrome && chrome.conectado) chrome.detenerEspejo();
+  espejo.activo = false;
   iniciarEspejo(app);
+}
+
+// Al cambiar el tamaño simulado, lo que se había mostrado ya no vale.
+export function olvidarImagen(app) {
+  app.espejo.ultimo = null;
+  app.espejo.liviano = null;
 }
 
 // Llega un cuadro del celular: se guarda (para quien abra el panel después) y se manda a los paneles.
 export function alCuadro(app, { datos, ancho, alto }) {
   const { espejo, estado } = app;
-  espejo.ancho = ancho;
-  espejo.alto = alto;
+  // Con un tamaño simulado, los datos de cada imagen siguen diciendo el tamaño real: se usan las medidas elegidas
+  const simulado = tamanoDe(estado.tamano);
+  espejo.ancho = simulado ? simulado.ancho : ancho;
+  espejo.alto = simulado ? simulado.alto : alto;
+  // Al sacar una captura, Chrome mete una imagen con la proporción del celular real (medido en un moto g24: una
+  // por captura nítida). No es del tamaño simulado y hace parpadear la pantalla y repetir la captura sin fin:
+  // se descarta.
+  if (simulado) {
+    const medida = medidaJpeg(datos);
+    if (medida && Math.abs(medida.ancho / medida.alto - simulado.ancho / simulado.alto) > 0.03) return;
+  }
   // Después de cada captura nítida, Chrome manda otra vez el último cuadro liviano, idéntico byte por byte
   // (se comprobó en un moto g24; un cambio real da uno distinto). No es un cambio: se descarta, para que no
   // pise a la imagen nítida ni dispare otra captura sin fin.
