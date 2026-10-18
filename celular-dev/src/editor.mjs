@@ -3,6 +3,7 @@
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join, basename, normalize, sep, resolve } from 'node:path';
 import { spawn } from 'node:child_process';
+import { buscarCode, abrirConElSistema } from './sistema.mjs';
 
 const SALTEAR = new Set(['node_modules', '.git', '.next', '.cache', '.vercel', '.netlify', 'coverage']);
 
@@ -47,15 +48,6 @@ export function ubicar(donde, carpeta, rutaSitio = '/') {
   return archivo ? { archivo, linea: lugar.linea, columna: lugar.columna } : null;
 }
 
-function buscarCode() {
-  if (process.platform !== 'win32') return 'code';
-  const posibles = [
-    join(process.env.LOCALAPPDATA || '', 'Programs', 'Microsoft VS Code', 'bin', 'code.cmd'),
-    join(process.env.ProgramFiles || '', 'Microsoft VS Code', 'bin', 'code.cmd')
-  ];
-  return posibles.find(existsSync) || 'code';
-}
-
 // Abre el archivo en esa línea. Devuelve 'vscode' o 'sistema' según cómo lo abrió.
 export function abrirEnEditor({ archivo, linea, columna }) {
   return new Promise(resolver => {
@@ -73,7 +65,3 @@ export function abrirEnEditor({ archivo, linea, columna }) {
   });
 }
 
-function abrirConElSistema(archivo) {
-  if (process.platform === 'win32') spawn('cmd', ['/c', 'start', '""', `"${archivo}"`], { stdio: 'ignore', windowsHide: true, windowsVerbatimArguments: true });
-  else spawn(process.platform === 'darwin' ? 'open' : 'xdg-open', [archivo], { stdio: 'ignore' });
-}

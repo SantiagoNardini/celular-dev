@@ -5,6 +5,7 @@ import { existsSync } from 'node:fs';
 import { join, delimiter } from 'node:path';
 import { EventEmitter } from 'node:events';
 import { adbPropio } from './instalar-adb.mjs';
+import { t } from './idioma.mjs';
 
 const esWindows = process.platform === 'win32';
 
@@ -34,7 +35,7 @@ export class Adb extends EventEmitter {
     super();
     this.ruta = ruta;
     this.rastreo = null;
-    this.estado = 'desconocido';   // device, unauthorized, offline, sin-celular
+    this.estado = 'desconocido';   // device, unauthorized, offline, sin-celular, sin-permiso (Linux)
     this.cerrando = false;
   }
 
@@ -80,7 +81,7 @@ export class Adb extends EventEmitter {
     const lista = await this.ejecutar(['reverse', '--list']);
     const yaEstaba = new RegExp(`tcp:${puerto}\\s+tcp:${puerto}`).test(lista.salida);
     const r = await this.ejecutar(['reverse', `tcp:${puerto}`, `tcp:${puerto}`]);
-    if (r.codigo !== 0) throw new Error(`no se pudo conectar el puerto ${puerto} del celular con la PC (${r.salida})`);
+    if (r.codigo !== 0) throw new Error(t('adb.sinReverse', { puerto, detalle: r.salida }));
     return yaEstaba;
   }
 
@@ -92,7 +93,7 @@ export class Adb extends EventEmitter {
   async forwardChrome() {
     const r = await this.ejecutar(['forward', 'tcp:0', 'localabstract:chrome_devtools_remote']);
     const puerto = parseInt(r.salida, 10);
-    if (r.codigo !== 0 || !puerto) throw new Error(`no se pudo conectar con el Chrome del celular (${r.salida})`);
+    if (r.codigo !== 0 || !puerto) throw new Error(t('adb.sinForward', { detalle: r.salida }));
     return puerto;
   }
 
@@ -162,6 +163,8 @@ export class Adb extends EventEmitter {
 export function estadoDe(texto) {
   const primero = texto.split('\n').map(l => l.trim()).find(Boolean);
   if (!primero) return 'sin-celular';
+  // en Linux, sin permiso para el USB: "SERIE<TAB>no permissions (user in plugdev group; ...)"
+  if (/\bno permissions\b/.test(primero)) return 'sin-permiso';
   return (primero.split(/\s+/)[1] || 'desconocido').trim();
 }
 

@@ -1,7 +1,8 @@
 // Todo lo que se muestra en la terminal: mensajes con etiqueta de color, pasos, carteles y el título
-// de la ventana. Cada mensaje queda también anotado en el registro (.celular/registro.log).
+// de la ventana. Cada mensaje queda también anotado en el registro (Documentos/celular-dev/registro.log).
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { t } from './idioma.mjs';
 
 const COLOR = {
   verde: '\x1b[32m', amarillo: '\x1b[33m', rojo: '\x1b[31m', cian: '\x1b[36m',
@@ -70,7 +71,7 @@ export function delCelular(nivel, simple, tecnico, donde, veces = 1) {
 
 export function paso(n, total, texto) {
   console.log('');
-  console.log(pintar('cian', `  Paso ${n} de ${total}: ${texto}`));
+  console.log(pintar('cian', `  ${t('pantalla.paso', { n, total, texto })}`));
   anotar('PASO', `${n} de ${total}: ${texto}`);
 }
 

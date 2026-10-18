@@ -98,9 +98,23 @@ function ico(imagenes) {
   return Buffer.concat([cabecera, ...entradas, ...imagenes.map(i => i.datos)]);
 }
 
+// ICNS (el ícono de las apps de Mac): una cabecera y una entrada por tamaño, cada una con su PNG
+function icns(imagenes) {
+  const TIPOS = { 16: 'icp4', 32: 'icp5', 64: 'icp6', 128: 'ic07', 256: 'ic08', 512: 'ic09' };
+  const entradas = imagenes.filter(i => TIPOS[i.tamano]).map(({ tamano, datos }) => {
+    const e = Buffer.alloc(8);
+    e.write(TIPOS[tamano], 0, 'ascii'); e.writeUInt32BE(datos.length + 8, 4);
+    return Buffer.concat([e, datos]);
+  });
+  const cabecera = Buffer.alloc(8);
+  cabecera.write('icns', 0, 'ascii'); cabecera.writeUInt32BE(8 + entradas.reduce((n, e) => n + e.length, 0), 4);
+  return Buffer.concat([cabecera, ...entradas]);
+}
+
 const carpeta = join(dirname(fileURLToPath(import.meta.url)), '..', 'marca');
 mkdirSync(carpeta, { recursive: true });
 const imagenes = [16, 24, 32, 48, 64, 128, 256].map(tamano => ({ tamano, datos: png(tamano, dibujar(tamano)) }));
 writeFileSync(join(carpeta, 'icono.ico'), ico(imagenes));
 writeFileSync(join(carpeta, 'icono.png'), imagenes.at(-1).datos);
-console.log(`Listo: ${join(carpeta, 'icono.ico')} (${imagenes.map(i => i.tamano).join(', ')} px)`);
+writeFileSync(join(carpeta, 'icono.icns'), icns([...imagenes, { tamano: 512, datos: png(512, dibujar(512)) }]));
+console.log(`Listo: icono.ico (${imagenes.map(i => i.tamano).join(', ')} px), icono.png (256 px) e icono.icns (16 a 512 px) en ${carpeta}`);

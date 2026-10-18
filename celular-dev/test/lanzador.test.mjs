@@ -1,14 +1,19 @@
-// El .bat del doble clic: con saltos de línea de Linux, cmd.exe se confunde con las etiquetas y falla.
+// Los lanzadores del doble clic. El .bat necesita saltos de línea de Windows (con los de Linux, cmd.exe
+// se confunde con las etiquetas y falla); los de Mac y Linux, al revés, y además permiso de ejecución.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 
-const bat = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'celular-dev.bat');
+const raiz = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const bat = join(raiz, 'celular-dev.bat');
+const sh = join(raiz, 'celular-dev.sh');
+const command = join(raiz, 'celular-dev.command');
 
-test('celular-dev.bat existe al lado de la carpeta del programa', () => {
-  assert.ok(existsSync(bat), `no está ${bat}`);
+test('los tres lanzadores están al lado de la carpeta del programa', () => {
+  for (const archivo of [bat, sh, command]) assert.ok(existsSync(archivo), `no está ${archivo}`);
 });
 
 test('celular-dev.bat usa saltos de línea de Windows (CRLF) en todos los renglones', () => {
@@ -30,4 +35,35 @@ test('celular-dev.bat usa primero el Node que trae el paquete (runtime\\node.exe
   const propio = texto.indexOf('runtime\\node.exe');
   assert.ok(propio > 0, 'no busca runtime\\node.exe');
   assert.ok(propio < texto.indexOf('where node'), 'tiene que mirar runtime\\ antes que el Node instalado');
+});
+
+test('los lanzadores de Mac y Linux usan saltos de línea de Linux (LF) y empiezan con #!/bin/sh', () => {
+  for (const archivo of [sh, command]) {
+    const texto = readFileSync(archivo, 'utf8');
+    assert.ok(!texto.includes('\r'), `${archivo} tiene saltos de línea de Windows: no arrancaría`);
+    assert.ok(texto.startsWith('#!/bin/sh\n'), `${archivo} no empieza con #!/bin/sh`);
+  }
+});
+
+test('celular-dev.sh usa primero el Node del paquete, revisa la versión y abre el programa', () => {
+  const texto = readFileSync(sh, 'utf8');
+  assert.ok(texto.indexOf('runtime/node') < texto.indexOf('command -v node'));
+  assert.match(texto, /< 22/);
+  assert.match(texto, /celular-dev\/bin\/celular\.mjs/);
+});
+
+test('celular-dev.command abre celular-dev.sh', () => {
+  assert.match(readFileSync(command, 'utf8'), /celular-dev\.sh/);
+});
+
+test('git guarda los lanzadores de Mac y Linux con permiso de ejecución', { skip: !existsSync(join(raiz, '.git')) }, () => {
+  const r = spawnSync('git', ['ls-files', '-s', 'celular-dev.sh', 'celular-dev.command'], { cwd: raiz, encoding: 'utf8' });
+  if (r.status !== 0) return;
+  const modos = r.stdout.trim().split('\n').filter(Boolean).map(l => l.split(' ')[0]);
+  assert.deepEqual(modos, ['100755', '100755']);
+});
+
+test('celular-dev.sh no tiene errores de sintaxis', { skip: process.platform === 'win32' }, () => {
+  const r = spawnSync('sh', ['-n', sh]);
+  assert.equal(r.status, 0, String(r.stderr));
 });

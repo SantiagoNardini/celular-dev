@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { elegirIdioma } from '../src/idioma.mjs';
 import { explicar } from '../src/explicar.mjs';
+
+elegirIdioma('es');
 
 const ex = (texto, extra = {}) => explicar({ tipo: 'excepcion', nivel: 'error', texto, ...extra });
 
@@ -51,4 +54,14 @@ test('red: bloqueado y sin conexión', () => {
 test('navegador: CSP y contenido mixto', () => {
   assert.match(explicar({ tipo: 'navegador', texto: 'Refused to load because it violates the following Content Security Policy directive' }), /CSP/);
   assert.match(explicar({ tipo: 'navegador', texto: 'Mixed Content: The page was loaded over HTTPS' }), /inseguro/);
+});
+
+test('en inglés también explica, con los mismos datos', () => {
+  elegirIdioma('en');
+  try {
+    assert.match(ex('ReferenceError: mostrarRanking is not defined'), /uses `mostrarRanking`, but it does not exist/);
+    assert.match(explicar({ tipo: 'http', nivel: 'aviso', texto: '', dato: { url: '/img/logo.png', estado: 404 } }), /`logo.png` was not found/);
+  } finally {
+    elegirIdioma('es');
+  }
 });

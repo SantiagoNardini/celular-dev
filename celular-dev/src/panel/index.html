@@ -10,12 +10,13 @@
 <body>
 <header class="cabecera">
   <div class="marca"><span class="logo" aria-hidden="true"></span>celular-dev</div>
-  <span id="estado" class="pastilla" role="status">Conectando…</span>
-  <button class="chico" data-accion="salir" title="Cierra celular-dev y desconecta el celular">Cerrar</button>
+  <span id="estado" class="pastilla" role="status">…</span>
+  <button id="idioma" class="chico" data-accion="idioma" data-valor="en">English</button>
+  <button id="cerrar" class="chico" data-accion="salir">×</button>
 </header>
 
 <main id="app" aria-live="polite">
-  <p class="nota">Conectando con celular-dev…</p>
+  <p class="nota">celular-dev…</p>
 </main>
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>

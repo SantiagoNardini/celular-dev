@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { armarInforme } from '../src/informe.mjs';
+import { elegirIdioma } from '../src/idioma.mjs';
+
+elegirIdioma('es');
 
 const base = {
   sitio: { descripcion: 'mi-sitio (http://localhost:5500/)' },
@@ -27,11 +30,12 @@ test('errores y avisos separados, con detalle técnico, lugar y veces', () => {
 });
 
 test('incluye la revisión del sitio y la red simulada', () => {
-  const t = armarInforme({ ...base, errores: [], red: '3G lenta', revision: { hora: '23:05', red: '3G lenta', puntos: [
+  const t = armarInforme({ ...base, errores: [], red: 'lenta', revision: { hora: '23:05', red: 'lenta', puntos: [
     { nivel: 'error', simple: 'La página es más ancha que la pantalla.', ejemplos: ['img.banner'] },
     { nivel: 'ok', simple: 'Todo lo demás bien.', ejemplos: [] }
   ] } });
   assert.match(t, /Red simulada: 3G lenta/);
+  assert.match(t, /con red 3G lenta/);
   assert.match(t, /## Revisión del sitio en el celular \(1\)/);
   assert.match(t, /`img\.banner`/);
   assert.doesNotMatch(t, /Todo lo demás bien/);
@@ -40,4 +44,17 @@ test('incluye la revisión del sitio y la red simulada', () => {
 test('las comillas invertidas del mensaje no rompen el formato', () => {
   const t = armarInforme({ ...base, errores: [{ nivel: 'error', simple: 's', texto: 'Error con `código`', donde: '', veces: 1, ultima: '1' }] });
   assert.match(t, /`Error con 'código'`/);
+});
+
+test('en inglés, para quien usa el panel en inglés', () => {
+  elegirIdioma('en');
+  try {
+    const t = armarInforme({ ...base, errores: [], red: 'lenta', revision: null });
+    assert.match(t, /# Errors found on the phone/);
+    assert.match(t, /For the AI:/);
+    assert.match(t, /Simulated network: slow 3G/);
+    assert.match(t, /There were no errors/);
+  } finally {
+    elegirIdioma('es');
+  }
 });

@@ -13,7 +13,8 @@ before(async () => {
   panel = await iniciarPanel({
     obtenerEstado: () => estado,
     alAccion: async (accion, valor) => { acciones.push([accion, valor]); return { mensaje: 'hecho' }; },
-    obtenerVista: () => null
+    obtenerTextos: () => ({ 'panel.recargar': 'Recargar' }),
+    alEspejo: (pedido, respuesta) => { respuesta.writeHead(200, { 'Content-Type': 'multipart/x-mixed-replace; boundary=cuadro' }); respuesta.end('--cuadro'); }
   });
 });
 after(() => panel && panel.cerrar());
@@ -55,12 +56,22 @@ test('un cuerpo roto no lo tumba', async () => {
   assert.ok(JSON.parse(r.datos).error);
 });
 
-test('sin vista todavía: 404', async () => {
-  assert.equal((await pedir({ ruta: '/api/vista.png' })).estado, 404);
+test('manda los textos del idioma elegido', async () => {
+  assert.deepEqual(JSON.parse((await pedir({ ruta: '/api/textos' })).datos), { 'panel.recargar': 'Recargar' });
+});
+
+test('el espejo lo atiende el programa (video MJPEG)', async () => {
+  const r = await pedir({ ruta: '/api/espejo.mjpg' });
+  assert.equal(r.estado, 200);
+  assert.match(r.tipo, /^multipart.x-mixed-replace/);
+});
+
+test('el espejo también exige el Host propio', async () => {
+  assert.equal((await pedir({ ruta: '/api/espejo.mjpg', host: 'sitio-malo.com' })).estado, 403);
 });
 
 test('una segunda copia no puede abrir el panel (el puerto hace de candado)', async () => {
-  assert.equal(await iniciarPanel({ obtenerEstado: () => ({}), alAccion: async () => ({}), obtenerVista: () => null }), null);
+  assert.equal(await iniciarPanel({ obtenerEstado: () => ({}), alAccion: async () => ({}) }), null);
 });
 
 test('los cambios llegan por SSE', async () => {

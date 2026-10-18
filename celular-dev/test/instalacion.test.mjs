@@ -5,7 +5,6 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { spawnSync } from 'node:child_process';
 
 let temporal;
 before(() => {
@@ -30,14 +29,11 @@ test('el ícono es un .ico válido con los tamaños de Windows, y el .png de 256
   assert.equal(png.readUInt32BE(16), 256);
 });
 
-test('descomprimir un ZIP (así se instalan ADB y el Node del paquete)', { skip: process.platform !== 'win32' }, async () => {
+test('descomprimir un ZIP (así se instala ADB), con lo que tenga el sistema', async () => {
   const { descomprimir } = await import('../src/instalar-adb.mjs');
-  const origen = join(temporal, 'origen', 'platform-tools');
-  mkdirSync(origen, { recursive: true });
-  writeFileSync(join(origen, 'adb.exe'), 'falso');
+  const { armarZip } = await import('../scripts/archivos.mjs');
   const zip = join(temporal, 'prueba.zip');
-  const r = spawnSync('tar', ['-a', '-c', '-f', zip, '-C', join(temporal, 'origen'), 'platform-tools']);
-  assert.equal(r.status, 0, 'tar no pudo armar el ZIP de prueba');
+  writeFileSync(zip, armarZip([{ nombre: 'platform-tools/' }, { nombre: 'platform-tools/adb.exe', datos: Buffer.from('falso') }]));
   const destino = join(temporal, 'destino');
   mkdirSync(destino);
   await descomprimir(zip, destino);
@@ -60,7 +56,16 @@ test('las preferencias se guardan y no pisan lo demás que se recuerda', async (
   assert.ok(existsSync(join(process.env.CELULAR_DATOS, 'config.json')));
 });
 
-test('los accesos directos apuntan al .bat y usan el ícono', async () => {
+test('el ícono de Mac (.icns) tiene sus tamaños en PNG', () => {
+  const icns = readFileSync(join(programa, 'marca', 'icono.icns'));
+  assert.equal(icns.toString('latin1', 0, 4), 'icns');
+  assert.equal(icns.readUInt32BE(4), icns.length);
+  const tipos = [];
+  for (let i = 8; i < icns.length; i += icns.readUInt32BE(i + 4)) tipos.push(icns.toString('latin1', i, i + 4));
+  assert.deepEqual(tipos, ['icp4', 'icp5', 'icp6', 'ic07', 'ic08', 'ic09']);
+});
+
+test('los accesos directos apuntan al lanzador de este sistema y usan su ícono', async () => {
   const { LANZADOR, ICONO } = await import('../src/accesos.mjs');
   assert.ok(existsSync(LANZADOR), `no está ${LANZADOR}`);
   assert.ok(existsSync(ICONO), `no está ${ICONO}`);

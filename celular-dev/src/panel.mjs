@@ -1,5 +1,6 @@
 // El panel: una página en el navegador de la PC para usar la herramienta sin la terminal.
-// Muestra el estado en vivo (le llega por SSE cada vez que algo cambia) y manda las acciones de los botones.
+// Muestra el estado en vivo (le llega por SSE cada vez que algo cambia), manda las acciones de los botones
+// y muestra el espejo del celular (un video MJPEG que arma el programa).
 //
 // Seguridad: escucha solo en 127.0.0.1, rechaza pedidos con otro Host (así una página de internet no
 // puede usarlo aunque apunte su dominio a 127.0.0.1) y las acciones exigen un encabezado propio, que un
@@ -8,7 +9,6 @@ import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { spawn } from 'node:child_process';
 
 // CELULAR_PUERTO_PANEL: otro puerto (lo usan las pruebas, para no chocar con una copia abierta)
 export const PUERTO_PANEL = +process.env.CELULAR_PUERTO_PANEL || 47823;
@@ -22,7 +22,7 @@ const ARCHIVOS = {
 const HOSTS = new Set([`127.0.0.1:${PUERTO_PANEL}`, `localhost:${PUERTO_PANEL}`]);
 
 // Prende el panel. Si el puerto está ocupado, ya hay otra copia corriendo: devuelve null.
-export function iniciarPanel({ obtenerEstado, alAccion, obtenerVista }) {
+export function iniciarPanel({ obtenerEstado, alAccion, obtenerTextos = () => ({}), alEspejo = null }) {
   const clientes = new Set();
   let pendiente = null;
 
@@ -43,12 +43,8 @@ export function iniciarPanel({ obtenerEstado, alAccion, obtenerVista }) {
       pedido.on('close', () => clientes.delete(respuesta));
       return;
     }
-    if (pedido.method === 'GET' && ruta === '/api/vista.png') {
-      const vista = obtenerVista();
-      if (!vista) { respuesta.writeHead(404); return respuesta.end(); }
-      respuesta.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-store' });
-      return respuesta.end(vista);
-    }
+    if (pedido.method === 'GET' && ruta === '/api/textos') return json(respuesta, 200, obtenerTextos());
+    if (pedido.method === 'GET' && ruta === '/api/espejo.mjpg' && alEspejo) return alEspejo(pedido, respuesta);
     if (pedido.method === 'POST' && ruta === '/api/accion') {
       if (pedido.headers['x-celular'] !== '1') return json(respuesta, 403, { error: 'No permitido.' });
       let cuerpo = '';
@@ -98,7 +94,3 @@ function json(respuesta, estado, datos) {
   respuesta.end(JSON.stringify(datos));
 }
 
-export function abrirNavegador(url) {
-  if (process.platform === 'win32') spawn('cmd', ['/c', 'start', '', url], { stdio: 'ignore', windowsHide: true });
-  else spawn(process.platform === 'darwin' ? 'open' : 'xdg-open', [url], { stdio: 'ignore' });
-}

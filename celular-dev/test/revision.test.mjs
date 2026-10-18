@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { elegirIdioma } from '../src/idioma.mjs';
 import { evaluar } from '../src/revision.mjs';
+
+elegirIdioma('es');
 
 const vacio = { cantidad: 0, ejemplos: [] };
 const base = () => ({
@@ -45,4 +48,19 @@ test('lento y pesado', () => {
   const textos = evaluar(d).filter(p => p.nivel === 'aviso').map(p => p.simple).join('\n');
   assert.match(textos, /4,2 s/);
   assert.match(textos, /3,0 MB/);
+});
+
+test('en inglés, con plurales y el punto decimal', () => {
+  elegirIdioma('en');
+  try {
+    const d = base();
+    d.chicos = { cantidad: 1, de: 10, ejemplos: ['a.x'] };
+    d.sinAlt = { cantidad: 3, ejemplos: [] };
+    const puntos = evaluar(d);
+    assert.ok(puntos.some(p => /^1 button or link is too small/.test(p.simple)));
+    assert.ok(puntos.some(p => /^3 images have no alternative text/.test(p.simple)));
+    assert.ok(puntos.some(p => /0.8 s/.test(p.simple)));
+  } finally {
+    elegirIdioma('es');
+  }
 });

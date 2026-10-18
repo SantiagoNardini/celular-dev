@@ -79,10 +79,18 @@ details ol { margin: 10px 0 0; padding-left: 20px; color: var(--texto-2); }
 .dialogo-falso { margin: 12px; padding: 10px; border-radius: 10px; background: var(--fondo); font-size: 12px; text-align: left; }
 .dialogo-falso b { font-weight: 500; display: block; margin-bottom: 4px; }
 .dialogo-falso .acciones { display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px; }
+/* Espejo: la pantalla del celular en vivo, que se puede tocar */
+.telefono.espejo { width: 250px; }
+.telefono.espejo .pantalla { position: relative; min-height: 420px; place-items: stretch; }
+.telefono.espejo img { width: 100%; display: block; cursor: pointer; touch-action: none; user-select: none; -webkit-user-drag: none; }
+.telefono.espejo img:not([src]) { display: none; }
+.telefono.espejo img:focus-visible { outline: 2px solid var(--acento); outline-offset: -2px; }
+.telefono.espejo .tapa:empty { display: none; }
+.telefono.espejo .tapa { position: absolute; inset: 0; display: grid; place-items: center; background: var(--tarjeta); }
 .pie-telefono { text-align: center; color: var(--texto-3); font-size: 12px; margin-top: 8px; }
 
 /* Panel */
-.tablero { display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: 24px; align-items: start; }
+.tablero { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 24px; align-items: start; }
 .metricas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
 .metrica { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: var(--radio); padding: 10px 12px; min-width: 0; }
 .metrica p:first-child { font-size: 12px; color: var(--texto-2); }

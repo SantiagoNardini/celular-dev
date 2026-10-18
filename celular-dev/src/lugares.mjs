@@ -9,7 +9,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 export function carpetaDatos() {
   // CELULAR_DATOS: otra carpeta (la usan las pruebas, para no tocar la de verdad)
   if (process.env.CELULAR_DATOS) { mkdirSync(process.env.CELULAR_DATOS, { recursive: true }); return process.env.CELULAR_DATOS; }
-  const documentos = [join(homedir(), 'Documents'), join(homedir(), 'OneDrive', 'Documents'), join(homedir(), 'OneDrive', 'Documentos')].find(existsSync);
+  // Linux en español la llama Documentos; en Windows puede estar dentro de OneDrive
+  const documentos = [join(homedir(), 'Documents'), join(homedir(), 'Documentos'), join(homedir(), 'OneDrive', 'Documents'), join(homedir(), 'OneDrive', 'Documentos')].find(existsSync);
   const carpeta = join(documentos || homedir(), 'celular-dev');
   mkdirSync(carpeta, { recursive: true });
   return carpeta;
