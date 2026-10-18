@@ -1,6 +1,6 @@
 {
   "name": "celular-dev",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Probá tu sitio en tu celular Android real desde Windows, Mac o Linux: lo abre por cable, lo recarga al guardar, te muestra sus errores explicados y su pantalla en vivo.",
   "type": "module",
   "bin": {
