@@ -20,6 +20,7 @@ Probá tu sitio en tu **celular Android real** mientras programás en la computa
 - **Inspector:** el botón de la mira junto al espejo, y después tocás un elemento: selector, tamaño, colores, letra, espaciado, aviso si es muy chico para tocarlo y «Copiar para la IA».
 - **Red:** todos los pedidos de la página con peso y tiempo, lo que más pesa (con consejos), lo que falla, y copiar como `curl`.
 - **Datos del sitio:** almacenamiento local, de sesión, cookies, service workers, caché e IndexedDB; borrar uno, o **Empezar de cero** (solo de ese sitio) y recargar.
+- **Versión a la vista:** al lado del nombre en el panel (`celular-dev v0.6.0`), en el cartel de la terminal y con `celular-dev --version` (o `-v`).
 - **Vista compacta** (botón de la cabecera): solo el celular y los errores, para dejar la ventana al costado mientras editás.
 - Avisa si hay una **versión nueva** publicada en GitHub (una sola consulta al abrir, sin mandar nada tuyo; se apaga con `CELULAR_SIN_ACTUALIZACIONES=1`).
 - Con la campana de la cabecera, el sistema te **avisa** si el celular se desconecta, el servidor se apaga o aparece un error grave aunque el panel esté tapado.

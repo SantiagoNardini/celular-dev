@@ -71,7 +71,7 @@ export function crearApp({ opciones = {}, cwd = process.cwd(), deps = {}, tiempo
 async function arrancar(app) {
   const { ui, estado, deps, conPanel } = app;
   ui.iniciarRegistro(app.carpetaPropia);
-  ui.cartel(t('arranque.cartel'));
+  ui.cartel(t('arranque.cartel', { version: estado.version ? ` v${estado.version}` : '' }));
 
   // el panel también hace de candado: si su puerto está ocupado, ya hay otra copia corriendo
   app.panel = await deps.iniciarPanel({

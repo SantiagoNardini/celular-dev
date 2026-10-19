@@ -92,3 +92,19 @@ test('opciones que no pueden andar (puerto raro, carpeta que no existe) avisan y
   }
   assert.equal(correr('--ayuda').status, 0);
 });
+
+test('--version (y -v) dice la versión del package.json, y el cartel y el panel la muestran', async () => {
+  const { version } = JSON.parse(readFileSync(join(raiz, 'celular-dev', 'package.json'), 'utf8'));
+  const celular = join(raiz, 'celular-dev', 'bin', 'celular.mjs');
+  for (const opcion of ['--version', '-v']) {
+    const r = spawnSync(process.execPath, [celular, opcion], { encoding: 'utf8', timeout: 15000 });
+    assert.equal(r.status, 0);
+    assert.equal(r.stdout.trim(), `celular-dev ${version}`);
+  }
+  // el cartel de arranque y el panel
+  const { t, elegirIdioma } = await import('../src/idioma.mjs');
+  elegirIdioma('es');
+  assert.equal(t('arranque.cartel', { version: ` v${version}` }), `celular-dev v${version}: tu sitio en tu celular Android`);
+  assert.equal(t('arranque.cartel', { version: '' }), 'celular-dev: tu sitio en tu celular Android');
+  assert.match(readFileSync(join(raiz, 'celular-dev', 'src', 'panel', 'index.html'), 'utf8'), /celular-dev<span id="version" class="version">/);
+});

@@ -21,6 +21,7 @@ Screenshots, reports and the log are saved in Documents/celular-dev.
   --sin-panel       terminal only: no panel (picks on its own: your server if there is one, else this folder)
   --celular <serial> with several phones connected: which one to use (see “adb devices”)
   --idioma <es|en>  language for the panel and messages (otherwise the one chosen in the panel; English if never chosen)
+  -v, --version     show celular-dev's version
   --ayuda           this help
 
 Needs the phone connected over USB with USB debugging turned on, and Chrome on the phone.
@@ -49,7 +50,8 @@ Needs the phone connected over USB with USB debugging turned on, and Chrome on t
   'paso.celular': 'Connect the phone',
   'paso.abrir': 'Open your site on the phone',
 
-  'arranque.cartel': 'celular-dev: your site on your Android phone',
+  'arranque.cartel': 'celular-dev{version}: your site on your Android phone',
+  'resumen.version': 'Version',
   'arranque.otraCopia': 'Another copy of celular-dev is already open.',
   'arranque.otraCopiaSolucion': 'Opening its panel. To start over, close that window first.',
   'arranque.panelAbierto': 'Panel open in your browser: {url}',

@@ -21,6 +21,7 @@ Las capturas, los informes y el registro quedan en Documentos/celular-dev.
   --sin-panel       solo terminal: no abre el panel (elige solo: tu servidor si hay uno, si no esta carpeta)
   --celular <serie> con varios celulares conectados: cuál usar (ver «adb devices»)
   --idioma <es|en>  idioma del panel y los mensajes (si no, el que elegiste en el panel; si nunca elegiste, inglés)
+  -v, --version     mostrar la versión de celular-dev
   --ayuda           esta ayuda
 
 Necesita el celular conectado por USB con la depuración USB activada, y Chrome en el celular.
@@ -49,7 +50,8 @@ Necesita el celular conectado por USB con la depuración USB activada, y Chrome 
   'paso.celular': 'Conectar el celular',
   'paso.abrir': 'Abrir tu sitio en el celular',
 
-  'arranque.cartel': 'celular-dev: tu sitio en tu celular Android',
+  'arranque.cartel': 'celular-dev{version}: tu sitio en tu celular Android',
+  'resumen.version': 'Versión',
   'arranque.otraCopia': 'Ya hay otra copia de celular-dev abierta.',
   'arranque.otraCopiaSolucion': 'Te abro su panel. Si querés empezar de nuevo, cerrá esa ventana primero.',
   'arranque.panelAbierto': 'Panel abierto en el navegador: {url}',

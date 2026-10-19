@@ -33,6 +33,7 @@ export function escucharTeclas(app) {
 export function mostrarResumen(app) {
   const { estado, sitio, ui } = app;
   ui.cartel(t('resumen.corriendo'), 'verde');
+  if (estado.version) ui.renglon(`     ${t('resumen.version')}  v${estado.version}`);
   ui.renglon(`     ${t('resumen.sitio')}    ${sitio.url}${sitio.tipo === 'carpeta' ? `  (${t('resumen.carpeta')} ${sitio.carpeta})` : ''}`);
   ui.renglon(`     ${t('resumen.celular')}  ${estado.celular.modelo}${estado.celular.android ? `, Android ${estado.celular.android}` : ''}`);
   ui.renglon(`     ${t('resumen.recarga')}  ${t(`resumen.recarga.${estado.modo}`)}`);

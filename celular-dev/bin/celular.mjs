@@ -5,11 +5,13 @@
 // Acá solo se leen las opciones y se arranca: el programa está en src/app.
 import { parseArgs } from 'node:util';
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { elegirIdioma, t } from '../src/idioma.mjs';
 import { preferencia, carpetaDatos, rutaParaMostrar } from '../src/lugares.mjs';
 import { PUERTOS_CONOCIDOS } from '../src/servidor.mjs';
 import { crearApp } from '../src/app/index.mjs';
+import { versionActual } from '../src/app/novedad.mjs';
 import { escucharTeclas } from '../src/app/teclas.mjs';
 import * as ui from '../src/pantalla.mjs';
 
@@ -19,7 +21,7 @@ try {
     options: {
       carpeta: { type: 'string' }, codigo: { type: 'string' }, puerto: { type: 'string' }, ruta: { type: 'string' },
       manual: { type: 'boolean' }, iniciar: { type: 'boolean' }, todo: { type: 'boolean' }, 'sin-panel': { type: 'boolean' },
-      idioma: { type: 'string' }, celular: { type: 'string' }, ayuda: { type: 'boolean', short: 'h' }
+      idioma: { type: 'string' }, celular: { type: 'string' }, ayuda: { type: 'boolean', short: 'h' }, version: { type: 'boolean', short: 'v' }
     }
   }).values;
 } catch (error) {
@@ -29,6 +31,7 @@ try {
 }
 // el idioma: --idioma, o CELULAR_IDIOMA, o el que se eligió en el panel; si no, inglés
 elegirIdioma(opciones.idioma || process.env.CELULAR_IDIOMA || preferencia('idioma'));
+if (opciones.version) { console.log(`celular-dev ${versionActual(join(dirname(fileURLToPath(import.meta.url)), '..'))}`); process.exit(0); }
 if (opciones.ayuda) { console.log(t('ayuda', { puertos: PUERTOS_CONOCIDOS.join(', ') })); process.exit(0); }
 
 // opciones que no pueden andar: se avisa y se sale, en vez de quedar esperando algo que nunca va a aparecer

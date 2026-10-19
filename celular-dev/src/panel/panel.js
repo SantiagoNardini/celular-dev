@@ -142,6 +142,9 @@ function dibujarCabecera() {
   pastilla.className = 'pastilla ' + clase;
   document.title = `celular-dev · ${texto}`;
   document.documentElement.lang = estado.idioma;
+  const version = document.getElementById('version');
+  version.textContent = estado.version ? `v${estado.version}` : '';
+  version.title = estado.version ? `celular-dev ${estado.version}` : '';
   const otro = estado.idioma === 'es' ? 'en' : 'es';
   const idioma = document.getElementById('idioma');
   idioma.dataset.valor = otro;
