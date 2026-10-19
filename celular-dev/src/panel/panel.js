@@ -44,6 +44,7 @@ const ICONOS = {
   tilde: '<path d="m20 6-11 11-5-5"/>',
   globo: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
   limpiar: '<path d="M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/>',
+  apagar: '<path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><path d="M12 2v10"/>',
   compacto: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/>',
   campana: '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
   campanaNo: '<path d="M13.73 21a2 2 0 0 1-3.46 0M18.63 13A17.9 17.9 0 0 1 18 8M6.26 6.26A5.9 5.9 0 0 0 6 8c0 7-3 9-3 9h14M18 8a6 6 0 0 0-9.33-5"/><path d="m1 1 22 22"/>'
@@ -150,7 +151,7 @@ function dibujarCabecera() {
   idioma.dataset.valor = otro;
   idioma.innerHTML = `${BANDERAS[otro]}${otro === 'en' ? 'English' : 'Español'}`;
   const cerrar = document.getElementById('cerrar');
-  cerrar.textContent = tr('cabecera.cerrar');
+  cerrar.innerHTML = ic('apagar') + tr('cabecera.cerrar');
   cerrar.title = tr('cabecera.cerrarTitulo');
   dibujarBotonAvisos();
   dibujarBotonCompacto();
