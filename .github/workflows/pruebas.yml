@@ -47,5 +47,7 @@ jobs:
             grep -E '^(ℹ|✖)|not ok|Error|timed out|cancelled' prueba.log | head -60 || true
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-          # las pruebas que fallan, también como anotaciones: se ven en la página de la ejecución sin iniciar sesión
-          grep -E '^✖|AssertionError|Error:|expected|actual|+ actual' prueba.log | sed 's/%/%25/g' | head -20 | while IFS= read -r linea; do echo "::error title=${{ matrix.sistema }} Node ${{ matrix.node }}::${linea}"; done || true
+          # solo si algo falló: las pruebas que fallan también como anotaciones (se ven sin iniciar sesión)
+          if [ "${{ job.status }}" = "failure" ]; then
+            grep -E '^✖|AssertionError|^ +(expected|actual):|^ +[+-] ' prueba.log | sed 's/%/%25/g' | head -20 | while IFS= read -r linea; do echo "::error title=${{ matrix.sistema }} Node ${{ matrix.node }}::${linea}"; done || true
+          fi
