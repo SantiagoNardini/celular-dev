@@ -141,7 +141,7 @@ export async function aplicarSitio(app, nuevo) {
   estado.avisos = [];
   estado.errores = 0;
   estado.revision = null;
-  app.traductor = new Traductor({ origen: sitio.origen, todo: app.opciones.todo });
+  app.traductor = new Traductor({ origen: sitio.origen, todo: true });
   if (anterior) {
     if (anterior.cerrarEstatico) anterior.cerrarEstatico();
     if (app.adb && !anterior.reverseYaEstaba && anterior.puerto !== sitio.puerto) await app.adb.quitarReverse(anterior.puerto);

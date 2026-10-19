@@ -18,7 +18,7 @@ try {
     options: {
       carpeta: { type: 'string' }, codigo: { type: 'string' }, puerto: { type: 'string' }, ruta: { type: 'string' },
       manual: { type: 'boolean' }, todo: { type: 'boolean' }, 'sin-panel': { type: 'boolean' },
-      idioma: { type: 'string' }, ayuda: { type: 'boolean', short: 'h' }
+      idioma: { type: 'string' }, celular: { type: 'string' }, ayuda: { type: 'boolean', short: 'h' }
     }
   }).values;
 } catch (error) {

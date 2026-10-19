@@ -17,6 +17,7 @@ import { esperarCarga } from './frescura.mjs';
 import { tamanoDe, paraChrome, cabe } from './tamanos.mjs';
 import { limpiarSoltada } from '../buscar-carpeta.mjs';
 import { ocultarNovedad } from './novedad.mjs';
+import { armarDiagnostico } from './diagnostico.mjs';
 
 const sello = (ui, d) => `${ui.fecha(d)}_${ui.hora(d).replace(/:/g, '-')}`;
 
@@ -337,6 +338,11 @@ export async function alAccion(app, accion, valor) {
       return {};
     case 'idioma': return cambiarIdioma(app, valor);
     case 'arreglar': return arreglar(app);
+    case 'elegir-celular': {
+      if (!app.adb || !app.adb.elegir(String(valor))) return { error: t('accion.celularYaNo') };
+      return { mensaje: t('accion.celularElegido') };
+    }
+    case 'diagnostico': return { texto: await armarDiagnostico(app) };
     case 'ver-novedad':
       // la dirección sale del estado, no del panel
       if (!estado.novedad || !/^https:\/\/github\.com\//.test(estado.novedad.url)) return {};
@@ -348,7 +354,7 @@ export async function alAccion(app, accion, valor) {
       if (await abrirEnCelular(app)) await conectarConsola(app);
       return { mensaje: t('accion.abiertoDeNuevo') };
     case 'limpiar':
-      estado.avisos = []; estado.errores = 0; app.interno.impreso.clear(); cambio(app);
+      estado.avisos = []; estado.consolaLineas = []; estado.errores = 0; app.interno.impreso.clear(); cambio(app);
       return { mensaje: t('accion.listaLimpia') };
     case 'instalar-adb': return instalarAdb(app);
     case 'crear-accesos': return crearLosAccesos(app);

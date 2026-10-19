@@ -35,3 +35,19 @@ test('el aviso de adb al prender su servicio no rompe nada: se descarta', () => 
   const r = leerAvisos('* daemon not running; starting now at tcp:5037\n');
   assert.deepEqual(r, { estados: [], resto: '', invalido: true });
 });
+
+import { dispositivosDe, serieElegida } from '../src/adb.mjs';
+test('varios celulares: se reconocen los modelos y hace falta elegir si hay más de uno listo', () => {
+  const dos = 'AAA\tdevice usb:1-2 product:p model:moto_g24_power device:d\nBBB\tdevice model:Pixel_6\n';
+  assert.deepEqual(dispositivosDe(dos).map(d => d.nombre), ['moto g24 power', 'Pixel 6']);
+  assert.equal(estadoDe(dos), 'varios');
+  assert.equal(estadoDe(dos, 'BBB'), 'device');
+  assert.equal(serieElegida(dispositivosDe(dos), 'BBB'), 'BBB');
+  assert.equal(serieElegida(dispositivosDe(dos)), null);
+  // uno listo y otro esperando permiso: se usa el listo
+  assert.equal(estadoDe('AAA\tdevice\nBBB\tunauthorized\n'), 'device');
+  assert.equal(serieElegida(dispositivosDe('AAA\tunauthorized\nBBB\tdevice\n')), 'BBB');
+  // ninguno listo: el estado del primero
+  assert.equal(estadoDe('AAA\tunauthorized\nBBB\toffline\n'), 'unauthorized');
+  assert.equal(estadoDe(''), 'sin-celular');
+});

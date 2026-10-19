@@ -40,6 +40,8 @@ export function estadoInicial({ carpetaProyecto, esProyecto, manual }) {
     revisando: false,
     recargas: 0,
     errores: 0,
+    celulares: [],                     // los celulares que ve ADB: { serie, estado, nombre } (para elegir si hay varios)
+    consolaLineas: [],                 // console.log e info de la página, el último arriba (no son errores)
     ronda: 0,                          // cuántas veces cargó la página el celular: separa los errores nuevos de los de antes de recargar
     avisos: [],                        // errores y avisos del celular, agrupados, el último arriba (ronda: en qué carga pasó por última vez)
     actividad: []                      // lo que hizo el programa: guardados, recargas, conexiones
@@ -69,6 +71,14 @@ export function contar(app, nivel, texto, solucion) {
   ({ ok: ui.ok, info: ui.info, aviso: ui.aviso, error: ui.falla })[nivel](texto, solucion);
   estado.actividad.unshift({ id: `${Date.now()}-${Math.random()}`, nivel, texto: solucion && solucion.length ? `${texto} ${solucion[0]}` : texto, hora: ui.hora() });
   if (estado.actividad.length > 30) estado.actividad.length = 30;
+  cambio(app);
+}
+
+// Un console.log / info de la página: va a su propia lista, sin mezclarse con los errores.
+export function registrarConsola(app, aviso) {
+  const { estado, ui } = app;
+  estado.consolaLineas.unshift({ id: `${Date.now()}-${Math.random()}`, texto: aviso.texto, donde: aviso.donde, hora: ui.hora() });
+  if (estado.consolaLineas.length > 200) estado.consolaLineas.length = 200;
   cambio(app);
 }
 

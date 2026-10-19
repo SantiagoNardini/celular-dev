@@ -11,6 +11,10 @@ Probá tu sitio en tu **celular Android real** mientras programás en la computa
 - Si algo falla (celular, servidor o pestaña de Chrome), el panel lo explica y ofrece **un solo botón** para arreglarlo.
 - La **pantalla del celular se queda prendida** mientras celular-dev está abierto y el cable puesto (usa la opción «Mantener activa» de Android), y la deja como estaba al cerrar. Con bloqueo por PIN, el desbloqueo lo hacés vos.
 - Al cerrar (desde el panel, con Q o Ctrl+C, o cerrando la ventana) **no queda nada abierto**: ni el programa ni el servicio de ADB que él prendió (si ADB ya estaba prendido por otro programa, se deja), y la ventana del lanzador se cierra sola.
+- **Varios celulares:** si hay más de uno conectado, el panel los lista por modelo y elegís cuál usar (o `--celular <serie>`).
+- **Consola del celular** en el panel: los `console.log` e info de tu página, aparte de los errores.
+- **Copiar diagnóstico:** un botón que junta versiones, estado de ADB, celulares vistos y lo último que pasó (sin datos personales), para pegarlo cuando pidas ayuda.
+- Si el celular no aparece, el asistente explica lo más común: cable que solo carga, modo de USB, puerto y driver USB en Windows.
 - **Vista compacta** (botón de la cabecera): solo el celular y los errores, para dejar la ventana al costado mientras editás.
 - Avisa si hay una **versión nueva** publicada en GitHub (una sola consulta al abrir, sin mandar nada tuyo; se apaga con `CELULAR_SIN_ACTUALIZACIONES=1`).
 - Con la campana de la cabecera, el sistema te **avisa** si el celular se desconecta, el servidor se apaga o aparece un error grave aunque el panel esté tapado.

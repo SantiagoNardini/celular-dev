@@ -100,6 +100,9 @@ async function arrancar(app) {
     if (app.interno.cerrando) return;
   }
   app.adb = deps.crearAdb(rutaAdb);
+  // con varios celulares conectados: --celular <serie> (o ANDROID_SERIAL, como el propio adb) dice cuál
+  const serie = app.opciones.celular || process.env.ANDROID_SERIAL;
+  if (serie) app.adb.serie = serie;
   if (!(await app.adb.prender())) ui.aviso(t('arranque.adbTarda'));
   estado.pasos.adb = 'ok';
   contar(app, 'ok', t('arranque.adbOk'));

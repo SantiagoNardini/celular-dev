@@ -18,6 +18,7 @@ Las capturas, los informes y el registro quedan en Documentos/celular-dev.
   --manual          no recargar el celular al guardar: recargás vos (tecla R, botón del panel o el celular)
   --todo            mostrar también console.log e info del celular, no solo errores y avisos
   --sin-panel       solo terminal: no abre el panel (elige solo: tu servidor si hay uno, si no esta carpeta)
+  --celular <serie> con varios celulares conectados: cuál usar (ver «adb devices»)
   --idioma <es|en>  idioma del panel y los mensajes (si no, el que elegiste en el panel; si nunca elegiste, inglés)
   --ayuda           esta ayuda
 
@@ -190,6 +191,10 @@ Necesita el celular conectado por USB con la depuración USB activada, y Chrome 
   'accion.noCambioSitio': 'No pude cambiar el sitio: {detalle}',
   'accion.abiertoDeNuevo': 'Abierto de nuevo en el celular.',
   'accion.listaLimpia': 'Lista de errores limpia.',
+  'celular.varios': 'Hay varios celulares conectados.',
+  'celular.variosSolucion': 'Elegí uno en el panel (o con --celular <serie>), o desconectá los que no uses.',
+  'accion.celularYaNo': 'Ese celular ya no está conectado.',
+  'accion.celularElegido': 'Celular elegido.',
   'arreglar.celularSigue': 'Sigo sin ver el celular. Revisá que el cable esté bien puesto y que la pantalla esté desbloqueada.',
   'arreglar.sinPermitir': 'El celular está esperando tu permiso: mirá su pantalla y tocá «Permitir».',
   'arreglar.celularVolvio': 'Lo veo de nuevo. Reconectando…',
@@ -460,6 +465,16 @@ Necesita el celular conectado por USB con la depuración USB activada, y Chrome 
     'panel.todaviaNada': 'Todavía nada.',
     'panel.enVivo': 'recarga al guardar',
     'panel.manual': 'recarga manual',
+    'asistente.varios': 'Hay varios celulares conectados. ¿Cuál usás?',
+    'asistente.variosEstado.device': 'listo',
+    'asistente.variosEstado.unauthorized': 'esperando permiso',
+    'asistente.variosEstado.otro': 'no disponible',
+    'asistente.noApareceTitulo': '¿No aparece el celular?',
+    'asistente.noApareceTips': '<li>Probá con otro cable: muchos solo cargan y no pasan datos.</li><li>Cuando el celular pregunte para qué usar el USB, elegí «Transferencia de archivos» (no «Solo cargar»).</li><li>Probá con otro puerto USB de la computadora, mejor uno de atrás.</li>',
+    'asistente.noApareceWindows': '<li>En Windows, instalá el driver USB de la marca de tu celular (Motorola, Samsung, Xiaomi…) o el «Google USB Driver». Es la causa más común.</li>',
+    'panel.diagnostico': 'Copiar diagnóstico',
+    'toast.diagnosticoCopiado': 'Diagnóstico copiado: pegalo donde pidas ayuda',
+    'panel.consolaTitulo': 'Consola del celular',
     'novedad.texto': 'Hay una versión nueva de celular-dev: {version}.',
     'novedad.ver': 'Ver novedades',
     'novedad.ahoraNo': 'Ahora no',

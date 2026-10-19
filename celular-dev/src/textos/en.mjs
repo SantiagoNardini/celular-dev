@@ -18,6 +18,7 @@ Screenshots, reports and the log are saved in Documents/celular-dev.
   --manual          don't reload the phone on save: you reload (R key, panel button or the phone)
   --todo            also show console.log and info from the phone, not just errors and warnings
   --sin-panel       terminal only: no panel (picks on its own: your server if there is one, else this folder)
+  --celular <serial> with several phones connected: which one to use (see “adb devices”)
   --idioma <es|en>  language for the panel and messages (otherwise the one chosen in the panel; English if never chosen)
   --ayuda           this help
 
@@ -190,6 +191,10 @@ Needs the phone connected over USB with USB debugging turned on, and Chrome on t
   'accion.noCambioSitio': 'Could not change the site: {detalle}',
   'accion.abiertoDeNuevo': 'Opened on the phone again.',
   'accion.listaLimpia': 'Error list cleared.',
+  'celular.varios': 'There are several phones connected.',
+  'celular.variosSolucion': 'Pick one in the panel (or with --celular <serial>), or unplug the ones you do not use.',
+  'accion.celularYaNo': 'That phone is no longer connected.',
+  'accion.celularElegido': 'Phone selected.',
   'arreglar.celularSigue': 'I still can\'t see the phone. Check that the cable is plugged in properly and the screen is unlocked.',
   'arreglar.sinPermitir': 'The phone is waiting for your permission: look at its screen and tap “Allow”.',
   'arreglar.celularVolvio': 'I can see it again. Reconnecting…',
@@ -460,6 +465,16 @@ Needs the phone connected over USB with USB debugging turned on, and Chrome on t
     'panel.todaviaNada': 'Nothing yet.',
     'panel.enVivo': 'reloads on save',
     'panel.manual': 'manual reload',
+    'asistente.varios': 'Several phones are connected. Which one do you want to use?',
+    'asistente.variosEstado.device': 'ready',
+    'asistente.variosEstado.unauthorized': 'waiting for permission',
+    'asistente.variosEstado.otro': 'not available',
+    'asistente.noApareceTitulo': 'Can\'t see your phone?',
+    'asistente.noApareceTips': '<li>Try another cable: many only charge and do not carry data.</li><li>When the phone asks what to use USB for, choose “File transfer” (not “Charging only”).</li><li>Try another USB port on the computer, preferably one at the back.</li>',
+    'asistente.noApareceWindows': '<li>On Windows, install the USB driver from your phone’s brand (Motorola, Samsung, Xiaomi…) or the “Google USB Driver”. It is the most common cause.</li>',
+    'panel.diagnostico': 'Copy diagnostics',
+    'toast.diagnosticoCopiado': 'Diagnostics copied: paste them wherever you ask for help',
+    'panel.consolaTitulo': 'Phone console',
     'novedad.texto': 'There is a new version of celular-dev: {version}.',
     'novedad.ver': 'See what is new',
     'novedad.ahoraNo': 'Not now',

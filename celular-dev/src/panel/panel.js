@@ -79,7 +79,10 @@ async function accion(nombre, valor, boton) {
       return;
     }
     if (datos.error) avisar(datos.error, true);
-    else if (datos.texto && nombre === 'informe') {
+    else if (datos.texto && nombre === 'diagnostico') {
+      try { await navigator.clipboard.writeText(datos.texto); avisar(tr('toast.diagnosticoCopiado')); }
+      catch { avisar(datos.texto.slice(0, 200), true); }
+    } else if (datos.texto && nombre === 'informe') {
       try { await navigator.clipboard.writeText(datos.texto); avisar(tr('toast.informeCopiado', { archivo: datos.archivo })); }
       catch { avisar(tr('toast.informeGuardado', { archivo: datos.archivo })); }
     } else if (datos.mensaje) avisar(datos.mensaje);
@@ -103,6 +106,7 @@ document.addEventListener('click', e => {
     return;
   }
   if (boton && boton.dataset.accion === 'avisos') { alternarAvisos(); return; }
+  if (boton && boton.dataset.accion === 'elegir-celular') { accion('elegir-celular', boton.dataset.valor, boton); return; }
   if (boton && boton.dataset.accion === 'compacto') { alternarCompacto(); return; }
   if (boton && !boton.classList.contains('ocupado')) accion(boton.dataset.accion, boton.dataset.valor, boton);
 });
@@ -258,6 +262,15 @@ const ayudaUsb = () => `
     <ol>${tr('asistente.pasosUsb')}</ol>
   </details>`;
 
+// Con varios celulares conectados: una lista para elegir cuál se usa.
+function elegirCelularHtml() {
+  const estadoDe = e => e === 'device' ? tr('asistente.variosEstado.device') : e === 'unauthorized' ? tr('asistente.variosEstado.unauthorized') : tr('asistente.variosEstado.otro');
+  return `${tr('asistente.varios')}` + estado.celulares.map(c => `<div class="fila-servidor" title="${esc(c.serie)}"><span><b style="font-weight:500">${esc(c.nombre)}</b> <span class="nota">${estadoDe(c.estado)}</span></span>${c.estado === 'device' ? `<button class="chico" data-accion="elegir-celular" data-valor="${esc(c.serie)}">${tr('inicio.usar')}</button>` : ''}</div>`).join('');
+}
+
+// Si no se ve ningún celular: lo que más suele pasar.
+const ayudaNoAparece = () => `<details class="ayuda-sin-celular" open><summary>${tr('asistente.noApareceTitulo')}</summary><ul>${tr('asistente.noApareceTips')}${estado.plataforma === 'win32' ? tr('asistente.noApareceWindows') : ''}</ul></details>`;
+
 function pasosDelAsistente() {
   const p = estado.pasos;
   const cel = p.celular;
@@ -270,7 +283,7 @@ function pasosDelAsistente() {
     { id: 'cable', titulo: tr('asistente.cable'), ok: cel !== 'sin-celular' && cel !== 'desconocido',
       detalle: tr('asistente.cableDetalle') },
     { id: 'permitir', titulo: tr('asistente.permitir'), ok: cel === 'ok',
-      detalle: cel === 'offline' ? tr('asistente.noResponde') : cel === 'sin-permiso' ? tr('asistente.sinPermisoLinux') : tr('asistente.permitirDetalle') },
+      detalle: cel === 'varios' ? elegirCelularHtml() : cel === 'offline' ? tr('asistente.noResponde') : cel === 'sin-permiso' ? tr('asistente.sinPermisoLinux') : tr('asistente.permitirDetalle') },
     { id: 'chrome', titulo: tr('asistente.chrome'), ok: p.chrome === 'ok',
       detalle: p.chrome === 'falta' ? tr('asistente.instalaChrome') : tr('asistente.revisando') },
     { id: 'abierto', titulo: tr('asistente.abrir'), ok: p.abierto === 'ok', detalle: tr('asistente.abriendo') }
@@ -329,7 +342,7 @@ function vistaAsistente() {
     <h1>${tr('asistente.titulo')}</h1>
     <p class="sub">${estado.sitio ? tr('asistente.paraVer', { nombre: estado.sitio.nombre }) + ' ' : ''}${tr('asistente.seTilda')}</p>
     <div class="asistente">
-      <section class="tarjeta">${pasos}${actual <= 2 ? ayudaUsb() : ''}</section>
+      <section class="tarjeta">${pasos}${estado.pasos.celular === 'sin-celular' && actual <= 2 ? ayudaNoAparece() : ''}${actual <= 2 ? ayudaUsb() : ''}${actual <= 3 ? `<p class="diagnostico"><button class="chico fantasma" data-accion="diagnostico">${ic('informe')}${tr('panel.diagnostico')}</button></p>` : ''}</section>
       <div><div class="telefono"><div class="pantalla">${dibujo}</div></div>
       <p class="pie-telefono">${pie}</p></div>
     </div>`;
@@ -383,12 +396,15 @@ function vistaPanel() {
           <span style="flex:1"></span>
           <button class="chico fantasma" data-accion="cambiar-sitio">${ic('cambiar')}${tr('panel.cambiarSitio')}</button>
           <button class="chico fantasma" data-accion="abrir-datos">${ic('carpeta')}${tr('panel.verDatos')}</button>
+          <button class="chico fantasma" data-accion="diagnostico">${ic('informe')}${tr('panel.diagnostico')}</button>
         </div>
       </section>`,
     revision: !s.revision ? '' : `<h2>${tr('panel.revision')} <span class="cuenta">${esc(s.revision.hora)}${s.revision.red !== 'normal' ? ` · ${tr('panel.red')} ${nombreRed(s.revision.red)}` : ''}</span></h2>` +
       s.revision.puntos.map(p => `<div class="item ${p.nivel}"><span class="punto" aria-hidden="true"></span><div class="cuerpo">
         <p class="simple">${conCodigo(p.simple)}</p>${p.ejemplos.length ? `<p class="tecnico">${p.ejemplos.map(esc).join(' · ')}</p>` : ''}</div></div>`).join(''),
     errores: `<h2>${tr('panel.erroresTitulo')} ${s.avisos.length ? `<span class="cuenta">${s.avisos.length}</span><button class="chico fantasma" data-accion="limpiar">${ic('limpiar')}${tr('panel.limpiar')}</button>` : ''}</h2>${errores}`,
+    consola: !s.consolaLineas.length ? '' : `<h2>${tr('panel.consolaTitulo')} <span class="cuenta">${s.consolaLineas.length}</span></h2>` +
+      s.consolaLineas.slice(0, 50).map(l => `<div class="item log"><span class="punto" aria-hidden="true"></span><div class="cuerpo"><p class="simple consola-texto">${esc(l.texto)}</p><p class="tecnico">${l.donde ? esc(l.donde) + ' · ' : ''}${esc(l.hora)}</p></div></div>`).join(''),
     actividad: `<h2>${tr('panel.actividad')}</h2>${actividad}`,
     novedad: s.novedad ? `<div class="banda suave novedad"><p>${tr('novedad.texto', { version: s.novedad.version })}</p><button class="chico" data-accion="ver-novedad">${tr('novedad.ver')}</button><button class="chico fantasma" data-accion="ocultar-novedad">${tr('novedad.ahoraNo')}</button></div>` : '',
     problema: avisoProblema(s),
@@ -478,6 +494,7 @@ const ESQUELETOS = {
       <div data-zona="botones"></div>
       <section class="tarjeta lista" data-zona="revision"></section>
       <section class="tarjeta lista" data-zona="errores" aria-live="polite"></section>
+      <section class="tarjeta lista" data-zona="consola"></section>
       <section class="tarjeta lista actividad" data-zona="actividad"></section>
     </div><div>
       <div class="telefono espejo"><div class="pantalla">

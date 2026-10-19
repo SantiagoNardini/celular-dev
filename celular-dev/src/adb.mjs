@@ -36,7 +36,9 @@ export class Adb extends EventEmitter {
     super();
     this.ruta = ruta;
     this.rastreo = null;
-    this.estado = 'desconocido';   // device, unauthorized, offline, sin-celular, sin-permiso (Linux)
+    this.serie = null;             // el celular elegido (si hay varios conectados); null: el único que haya
+    this.lista = [];               // los celulares que ve adb: { serie, estado, nombre }
+    this.estado = 'desconocido';   // device, varios (hay más de uno listo: hay que elegir), unauthorized, offline, sin-celular, sin-permiso (Linux)
     this.cerrando = false;
     this.loIniciamos = undefined;   // el servicio de adb lo prendimos nosotros (y lo apagamos al salir), o ya estaba
   }
@@ -60,6 +62,8 @@ export class Adb extends EventEmitter {
   // Corre un comando de adb y devuelve { codigo, salida }. Se resuelve cuando el proceso termina, sin
   // esperar a que se cierre su salida (por la misma razón que en prender).
   ejecutar(args, espera = 15000) {
+    // con varios celulares conectados, adb pide decir cuál: se le dice el elegido
+    if (this.serie && !['start-server', 'kill-server', 'devices', 'track-devices', 'version'].includes(args[0])) args = ['-s', this.serie, ...args];
     return new Promise(resolver => {
       let salida = '';
       const p = spawn(this.ruta, args, { stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
@@ -118,14 +122,14 @@ export class Adb extends EventEmitter {
     const esReinicio = this.rastreo !== null;
     await this.prender();
     if (this.cerrando) return;
-    const p = spawn(this.ruta, ['track-devices'], { stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true });
+    const p = spawn(this.ruta, ['track-devices', '-l'], { stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true });
     this.rastreo = p;
     let recibido = '';
     p.stdout.setEncoding('utf8');
     p.stdout.on('data', datos => {
-      const { estados, resto, invalido } = leerAvisos(recibido + datos);
+      const { textos, resto, invalido } = separarAvisos(recibido + datos);
       recibido = resto;
-      for (const e of estados) this.cambiar(e);
+      for (const texto of textos) this.recibir(texto);
       // algo inesperado mezclado: se descartó, y se pregunta el estado una vez a la antigua
       if (invalido) this.consultarUnaVez();
     });
@@ -138,8 +142,26 @@ export class Adb extends EventEmitter {
   }
 
   async consultarUnaVez() {
-    const r = await this.ejecutar(['devices']);
-    this.cambiar(estadoDe(r.salida.split('\n').slice(1).join('\n')));
+    const r = await this.ejecutar(['devices', '-l']);
+    this.recibir(r.salida.split('\n').slice(1).join('\n'));
+  }
+
+  // Lo que dice adb de los celulares: se guarda la lista, se decide cuál se usa y se avisa el estado.
+  recibir(texto) {
+    const lista = dispositivosDe(texto);
+    if (JSON.stringify(lista) !== JSON.stringify(this.lista)) { this.lista = lista; this.emit('lista', lista); }
+    this.cambiar(estadoDe(texto, this.serie));
+    // el celular que anda queda como el elegido: si después se enchufa otro, no se cambia solo
+    const usado = serieElegida(lista, this.serie);
+    if (usado && this.estado === 'device') this.serie = usado;
+  }
+
+  // La persona elige cuál usar entre varios.
+  elegir(serie) {
+    if (!this.lista.some(d => d.serie === serie)) return false;
+    this.serie = serie;
+    this.cambiar(estadoDe(this.lista.map(d => `${d.serie}\t${d.estado}`).join('\n'), serie));
+    return true;
   }
 
   cambiar(estado) {
@@ -175,26 +197,50 @@ export class Adb extends EventEmitter {
   }
 }
 
-// Estado del primer celular de una lista "SERIE<TAB>estado" (una por renglón); sin renglones, ninguno.
-export function estadoDe(texto) {
-  const primero = texto.split('\n').map(l => l.trim()).find(Boolean);
-  if (!primero) return 'sin-celular';
-  // en Linux, sin permiso para el USB: "SERIE<TAB>no permissions (user in plugdev group; ...)"
-  if (/\bno permissions\b/.test(primero)) return 'sin-permiso';
-  return (primero.split(/\s+/)[1] || 'desconocido').trim();
+// Los celulares de una lista "SERIE<TAB>estado [detalles]" (una por renglón). Con -l, el detalle trae el modelo.
+export function dispositivosDe(texto) {
+  return texto.split('\n').map(l => l.trim()).filter(Boolean).map(l => {
+    const [serie, ...resto] = l.split(/\s+/);
+    const modelo = (/\bmodel:(\S+)/.exec(resto.join(' ')) || [])[1];
+    const estado = /\bno permissions\b/.test(l) ? 'sin-permiso' : (resto[0] || 'desconocido');
+    return { serie, estado, nombre: modelo ? modelo.replace(/_/g, ' ') : serie };
+  });
+}
+
+// El celular que se usa: el elegido si está, o el único que está listo; null si hay que elegir (o no hay).
+export function serieElegida(lista, serie = null) {
+  if (serie && lista.some(d => d.serie === serie)) return serie;
+  const listos = lista.filter(d => d.estado === 'device');
+  if (listos.length === 1) return listos[0].serie;
+  return lista.length === 1 ? lista[0].serie : null;
+}
+
+// El estado del celular que se usa. Con varios listos y ninguno elegido, 'varios': hay que elegir.
+export function estadoDe(texto, serie = null) {
+  const lista = dispositivosDe(texto);
+  if (!lista.length) return 'sin-celular';
+  const usado = serieElegida(lista, serie);
+  if (usado) return lista.find(d => d.serie === usado).estado;
+  if (lista.filter(d => d.estado === 'device').length > 1) return 'varios';
+  return lista[0].estado;
 }
 
 // Separa los avisos completos de track-devices. Devuelve { estados, resto, invalido }:
 // resto es lo que todavía no llegó entero; invalido, si apareció algo que no tiene el formato (se descarta).
-export function leerAvisos(texto) {
-  const estados = [];
+export function separarAvisos(texto) {
+  const textos = [];
   while (texto.length >= 4) {
     const prefijo = texto.slice(0, 4);
-    if (!/^[0-9a-f]{4}$/i.test(prefijo)) return { estados, resto: '', invalido: true };
+    if (!/^[0-9a-f]{4}$/i.test(prefijo)) return { textos, resto: '', invalido: true };
     const largo = parseInt(prefijo, 16);
     if (texto.length < 4 + largo) break;
-    estados.push(estadoDe(texto.slice(4, 4 + largo)));
+    textos.push(texto.slice(4, 4 + largo));
     texto = texto.slice(4 + largo);
   }
-  return { estados, resto: texto, invalido: false };
+  return { textos, resto: texto, invalido: false };
+}
+
+export function leerAvisos(texto) {
+  const { textos, resto, invalido } = separarAvisos(texto);
+  return { estados: textos.map(s => estadoDe(s)), resto, invalido };
 }

@@ -1,7 +1,7 @@
 // La conexión con el celular: abrir el sitio en su Chrome, conectarse a la consola de la pestaña y
 // rearmar todo cuando el celular se desconecta o ADB se reinicia.
 import { t } from '../idioma.mjs';
-import { cambio, contar, registrarAviso } from './estado.mjs';
+import { cambio, contar, registrarAviso, registrarConsola } from './estado.mjs';
 import { reanudarEspejo } from './espejo.mjs';
 import { alCargar } from './frescura.mjs';
 import { mantenerDespierto } from './despierto.mjs';
@@ -134,6 +134,8 @@ export function escucharChrome(app, alCuadro) {
     const aviso = app.traductor.traducir(metodo, params);
     if (aviso && aviso.tipo === 'carga') { alCargar(app); return; }   // el celular terminó de cargar la página
     if (!aviso) return;
+    // console.log e info van a la consola del panel; en la lista de errores solo con --todo
+    if (aviso.nivel === 'log') { registrarConsola(app, aviso); if (!app.opciones.todo) return; }
     registrarAviso(app, aviso);
   });
   chrome.on('cuadro', alCuadro);
@@ -165,6 +167,10 @@ export function escucharAdb(app) {
       rearmar(app);
     }
   });
+  adb.on('lista', lista => {
+    estado.celulares = lista.map(({ serie, estado: e, nombre }) => ({ serie, estado: e, nombre }));
+    cambio(app);
+  });
   adb.on('reinicio', () => {
     if (app.interno.cerrando || estado.fase !== 'corriendo') return;
     contar(app, 'info', t('celular.adbReinicio'));
@@ -179,6 +185,7 @@ export function explicarCelular(app, e) {
   cambio(app);
   if (e === 'sin-celular') ui.aviso(t('celular.noVeo'), [t('celular.noVeoCable'), t('celular.noVeoDepuracion')]);
   else if (e === 'unauthorized') ui.aviso(t('celular.sinPermitir'), [t('celular.sinPermitirSolucion')]);
+  else if (e === 'varios') ui.aviso(t('celular.varios'), [t('celular.variosSolucion')]);
   else if (e === 'sin-permiso') ui.aviso(t('celular.sinPermisoLinux'), [t('celular.sinPermisoLinuxSolucion')]);
   else if (e !== 'desconocido') ui.aviso(t('celular.raro', { estado: e }), [t('celular.reconectaCable')]);
 }

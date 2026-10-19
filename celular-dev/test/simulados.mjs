@@ -16,6 +16,8 @@ export class AdbSimulado extends EventEmitter {
     this.abiertas = [];          // las direcciones que se abrieron en el Chrome del celular
     this.chrome = null;          // el Chrome simulado, para abrirle las pestañas
     this.cerrado = false;
+    this.lista = [];             // los celulares que ve adb (para elegir entre varios)
+    this.serie = null;
   }
 
   async prender() { return true; }
@@ -55,6 +57,12 @@ export class AdbSimulado extends EventEmitter {
   async quitarForward(puerto) { this.forwards.delete(puerto); }
 
   vigilar() {}
+  elegir(serie) {
+    if (!this.lista.some(d => d.serie === serie)) return false;
+    this.serie = serie;
+    this.cambiar('device');
+    return true;
+  }
   async consultarUnaVez() { this.consultas = (this.consultas || 0) + 1; }
 
   // lo que en el de verdad avisa "adb track-devices": device, unauthorized, sin-celular...

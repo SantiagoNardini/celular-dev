@@ -206,6 +206,46 @@ test('mantiene la pantalla del celular prendida mientras corre, la prende si est
   assert.equal(p.adb.stayOn, '2', 'tiene que devolver lo que tenía');
 });
 
+test('con varios celulares: el panel los lista y se elige cuál usar; el diagnóstico cuenta el estado sin datos personales', async () => {
+  const p = armar({ opciones: { carpeta: carpetaSitio } });
+  p.app.arrancar();
+  await hasta(() => p.estado.fase === 'preparando');
+  p.adb.lista = [{ serie: 'AAA111', estado: 'device', nombre: 'moto g24 power' }, { serie: 'BBB222', estado: 'device', nombre: 'Pixel 6' }];
+  p.adb.emit('lista', p.adb.lista);
+  p.adb.cambiar('varios');
+  await hasta(() => p.estado.pasos.celular === 'varios' && p.estado.celulares.length === 2, { que: 'avisar que hay varios' });
+  assert.deepEqual(p.estado.celulares.map(c => c.nombre), ['moto g24 power', 'Pixel 6']);
+  assert.match((await accion('elegir-celular', 'ZZZ')).error, /ya no está conectado/);
+  assert.match((await accion('elegir-celular', 'BBB222')).mensaje, /elegido/);
+  await hasta(() => p.estado.fase === 'corriendo', { que: 'seguir con el celular elegido' });
+  assert.equal(p.adb.serie, 'BBB222');
+
+  const { texto } = await accion('diagnostico');
+  assert.match(texto, /# celular-dev diagnostics/);
+  assert.match(texto, /Phase: corriendo/);
+  assert.match(texto, /Model: moto g24 power/);
+  assert.match(texto, /Device: Pixel 6 \[BBB…\] device/, 'el número de serie va recortado');
+  assert.ok(!texto.includes('BBB222'));
+  assert.ok(!texto.includes(process.env.USERPROFILE || process.env.HOME), 'no tiene que traer la carpeta del usuario');
+  await p.app.salir(0);
+  await p.terminado;
+});
+
+test('la consola del celular: console.log y info van a su lista, no a los errores', async () => {
+  const p = armar({ opciones: { carpeta: carpetaSitio } });
+  await arrancarHastaCorrer(p);
+  p.chrome.evento('Runtime.consoleAPICalled', { type: 'log', args: [{ type: 'string', value: 'hola desde el celular' }] });
+  p.chrome.evento('Runtime.consoleAPICalled', { type: 'info', args: [{ type: 'string', value: 'dato' }, { type: 'number', value: 3 }] });
+  assert.equal(p.estado.avisos.length, 0, 'un log no es un error');
+  assert.deepEqual(p.estado.consolaLineas.map(l => l.texto), ['console.info: dato 3', 'console.log: hola desde el celular']);
+  p.chrome.evento('Page.loadEventFired', {});
+  assert.equal(p.estado.consolaLineas.length, 2, 'la carga de la página no es un mensaje de consola');
+  await accion('limpiar');
+  assert.equal(p.estado.consolaLineas.length, 0);
+  await p.app.salir(0);
+  await p.terminado;
+});
+
 test('un solo botón para arreglar lo que falla: el celular, el servidor o la pestaña de Chrome', async () => {
   const servidor = createServer((_, r) => r.end('<!doctype html><h1>Servidor</h1>'));
   await new Promise(r => servidor.listen(0, '127.0.0.1', r));

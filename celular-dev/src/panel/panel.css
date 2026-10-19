@@ -302,3 +302,8 @@ body.compacto .marca { display: none; }
 
 .bandera { width: 20px; height: 13px; flex: none; }
 #idioma { display: inline-flex; align-items: center; gap: 7px; }
+
+.consola-texto { font: 0.78125rem/1.5 ui-monospace, "Cascadia Code", Consolas, monospace; color: var(--texto-2); white-space: pre-wrap; }
+.ayuda-sin-celular { margin-top: 14px; }
+.ayuda-sin-celular ul { margin: 6px 0 0; padding-left: 20px; color: var(--texto-2); font-size: 0.8125rem; }
+.diagnostico { margin: 10px 0 0; }
