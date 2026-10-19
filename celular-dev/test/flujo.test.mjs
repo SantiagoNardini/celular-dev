@@ -988,3 +988,43 @@ test('al cambiar de sitio no se arrastra lo del anterior (consola, red, elemento
   await p.app.salir(0);
   await p.terminado;
 });
+
+test('dos pedidos de conexión con la pestaña a la vez comparten una sola conexión, y lo enorme que manda la página se corta', async () => {
+  const p = armar({ opciones: { carpeta: carpetaSitio } });
+  await arrancarHastaCorrer(p);
+  const { conectarConsola } = await import('../src/app/conexion.mjs');
+  p.chrome.cerrar();
+  const antes = p.chrome.conexiones;
+  const [a, b] = await Promise.all([conectarConsola(p.app, 3), conectarConsola(p.app, 3)]);
+  assert.deepEqual([a, b], [true, true]);
+  assert.equal(p.chrome.conexiones, antes + 1, 'tiene que haberse conectado una sola vez');
+  assert.equal(p.app.conectando, null);
+
+  // un console.log de megas y una dirección enorme no inflan el estado
+  p.chrome.evento('Runtime.consoleAPICalled', { type: 'log', args: [{ type: 'string', value: 'x'.repeat(5_000_000) }] });
+  p.chrome.evento('Runtime.consoleAPICalled', { type: 'error', args: [{ type: 'string', value: 'y'.repeat(5_000_000) }] });
+  p.chrome.evento('Network.requestWillBeSent', { requestId: '7', loaderId: '7', frameId: 'F', type: 'Image', timestamp: 1, request: { url: `data:image/png;base64,${'A'.repeat(3_000_000)}`, method: 'GET' } });
+  p.chrome.evento('Page.frameNavigated', { frame: { id: 'F', url: `data:text/html,${'z'.repeat(1_000_000)}` } });
+  await hasta(() => p.estado.pedidos.total === 1, { que: 'juntar el pedido' });
+  assert.ok(p.estado.consolaLineas[0].texto.length <= 2001);
+  assert.ok(p.estado.avisos[0].texto.length <= 2001);
+  assert.ok(p.estado.pedidos.filas[0].url.length <= 2000);
+  assert.ok(p.estado.celular.url.length <= 2001);
+  assert.ok(JSON.stringify(p.estado).length < 60_000, 'el estado que va al panel tiene que ser chico');
+  await p.app.salir(0);
+  await p.terminado;
+});
+
+test('una condición que Chrome no acepta no impide aplicar las demás, y los nombres raros no rompen nada', async () => {
+  const p = armar({ opciones: { carpeta: carpetaSitio } });
+  await arrancarHastaCorrer(p);
+  for (const clave of ['__proto__', 'constructor', 'toString', 5, null]) assert.match((await accion('condicion', { clave, valor: 'x' })).error, /no existe/);
+  // Chrome rechaza el cambio de lugar: el procesador lento se aplica igual y se avisa el error
+  p.chrome.lugar = async () => { throw new Error('Emulation.setLocaleOverride no existe en este Chrome'); };
+  p.estado.lento = true;
+  assert.ok((await accion('condicion', { clave: 'lugar', valor: 'madrid' })).error);
+  assert.equal(p.chrome.cpus.at(-1), 4, 'el procesador lento se aplicó igual');
+  assert.equal(p.estado.condiciones.lugar, 'real', 'lo que no se aceptó no queda marcado');
+  await p.app.salir(0);
+  await p.terminado;
+});

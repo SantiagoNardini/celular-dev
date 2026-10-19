@@ -12,7 +12,7 @@ export async function elegirCondicion(app, valor) {
   if (estado.fase !== 'corriendo') return { error: t('accion.noListo') };
   const clave = valor && valor.clave;
   const elegido = valor && String(valor.valor);
-  if (!OPCIONES[clave] || !OPCIONES[clave].includes(elegido)) return { error: t('condiciones.noExiste') };
+  if (typeof clave !== 'string' || !Object.hasOwn(OPCIONES, clave) || !OPCIONES[clave].includes(elegido)) return { error: t('condiciones.noExiste') };
   if (!chrome.conectado && !(await conectarConsola(app, 4))) return { error: t('accion.sinConexionPestana') };
   const antes = estado.condiciones[clave];
   estado.condiciones[clave] = elegido;

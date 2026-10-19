@@ -55,7 +55,7 @@ export function crearApp({ opciones = {}, cwd = process.cwd(), deps = {}, tiempo
     pedidos: new RegistroPedidos(),
     relojes: {},
     adb: null, chrome: null, traductor: null, panel: null, sitio: null, puertoDevtools: 0, ultimaCarga: 0, pantallaReal: null,
-    dejarDeVigilar: null, alElegirSitio: null, rearmando: null
+    dejarDeVigilar: null, alElegirSitio: null, rearmando: null, conectando: null
   };
   // la primera vez, el panel le muestra qué hacer con el espejo
   estado.version = versionActual(carpetaHerramienta);

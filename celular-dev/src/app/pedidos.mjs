@@ -22,7 +22,7 @@ export class RegistroPedidos {
         // el documento de la página principal: empieza una carga nueva, lo anterior ya no vale
         if (p.type === 'Document' && p.requestId === p.loaderId && (this.principal === undefined || p.frameId === this.principal)) this.pedidos.clear();
         // una redirección reutiliza el id: es otro pedido, el anterior ya terminó
-        this.pedidos.set(p.requestId, { id: p.requestId, url: p.request.url, metodo: p.request.method, tipo: p.type || 'Other', inicio: p.timestamp, estado: 0, mime: '', tamano: null, tiempo: null, fallo: '', cache: false });
+        this.pedidos.set(p.requestId, { id: p.requestId, url: String(p.request.url).slice(0, 2000), metodo: p.request.method, tipo: p.type || 'Other', inicio: p.timestamp, estado: 0, mime: '', tamano: null, tiempo: null, fallo: '', cache: false });
         if (this.pedidos.size > MAXIMO) this.pedidos.delete(this.pedidos.keys().next().value);
         return true;
       }

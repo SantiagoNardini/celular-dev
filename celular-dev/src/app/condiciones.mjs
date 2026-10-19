@@ -20,9 +20,11 @@ export const VECES_LENTO = 4;   // el celular lento: procesador 4 veces más des
 export async function aplicarCondiciones(app) {
   const { estado, chrome } = app;
   const c = estado.condiciones;
-  await chrome.medios(c);
-  await chrome.vision(VISION_CHROME[c.vision]);
-  await chrome.lugar(LUGARES[c.lugar] || null);
-  await chrome.cpu(estado.lento ? VECES_LENTO : 1);
+  // cada una por separado: si Chrome no acepta una (por ejemplo, un Chrome viejo sin cambio de idioma), las demás se aplican igual
+  let primero = null;
+  for (const aplicar of [() => chrome.medios(c), () => chrome.vision(VISION_CHROME[c.vision]), () => chrome.lugar(LUGARES[c.lugar] || null), () => chrome.cpu(estado.lento ? VECES_LENTO : 1)]) {
+    try { await aplicar(); } catch (error) { primero ||= error; }
+  }
+  if (primero) throw primero;
 }
 

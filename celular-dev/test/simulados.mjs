@@ -111,7 +111,7 @@ export class ChromeSimulado extends EventEmitter {
 
   abrirPestana(url) { this.pestanas.push({ id: String(this.pestanas.length + 1), url }); }
   async buscar(prefijo) { return this.pestanas.find(p => p.url.startsWith(prefijo)) || null; }
-  async conectar(pestana) { this.pestana = pestana; }
+  async conectar(pestana) { this.conexiones = (this.conexiones || 0) + 1; await new Promise(r => setTimeout(r, 15)); this.pestana = pestana; }
   get conectado() { return this.pestana !== null; }
 
   async recargar() {

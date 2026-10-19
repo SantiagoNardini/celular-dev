@@ -13,6 +13,11 @@ const pintar = (color, texto) => (conColor ? COLOR[color] + texto + COLOR.normal
 
 let registro = null;
 
+// Todo texto que viene de afuera (errores de la página, consola del celular, salida de ADB) pasa por acá antes de
+// mostrarse: una página podría escribir códigos de escape (cambiar el título de la ventana, mover el cursor, pegar
+// en el portapapeles) o saltos de línea que falsifiquen renglones del registro.
+export const limpiarControl = texto => String(texto == null ? '' : texto).replace(/\r\n|\r|\n/g, ' ⏎ ').replace(/[\u0000-\u0008\u000b-\u001f\u007f-\u009f]+/g, ' ');
+
 export function iniciarRegistro(carpeta) {
   try {
     mkdirSync(carpeta, { recursive: true });
@@ -40,10 +45,11 @@ export function hora(d = new Date()) {
 
 export function anotar(etiqueta, texto) {
   if (!registro) return;
-  try { appendFileSync(registro, `${fechaHora()} [${etiqueta}] ${texto}\n`); } catch { /* se sigue sin anotar */ }
+  try { appendFileSync(registro, `${fechaHora()} [${etiqueta}] ${limpiarControl(texto)}\n`); } catch { /* se sigue sin anotar */ }
 }
 
 function mensaje(etiqueta, color, texto, solucion = []) {
+  texto = limpiarControl(texto);
   console.log(`${pintar('gris', hora())} ${pintar(color, `[${etiqueta.padEnd(6)}]`)} ${texto}`);
   anotar(etiqueta, texto);
   for (const linea of solucion) {
@@ -60,6 +66,7 @@ export const falla = (texto, solucion) => mensaje('ERROR', 'rojo', texto, soluci
 // Lo que viene del celular (consola, errores de la página, red) va con su propia etiqueta: primero
 // la explicación simple y debajo, en gris, el mensaje técnico y dónde ocurrió.
 export function delCelular(nivel, simple, tecnico, donde, veces = 1) {
+  simple = limpiarControl(simple); tecnico = limpiarControl(tecnico); donde = limpiarControl(donde);
   const color = nivel === 'error' ? 'rojo' : nivel === 'aviso' ? 'amarillo' : 'blanco';
   const etiqueta = nivel === 'error' ? 'CEL ✖' : nivel === 'aviso' ? 'CEL !' : 'CEL';
   const repetido = veces > 1 ? pintar('gris', `  (×${veces})`) : '';

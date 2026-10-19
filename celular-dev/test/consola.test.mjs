@@ -56,3 +56,12 @@ test('carga de página y eventos desconocidos', () => {
   assert.equal(t().traducir('Page.loadEventFired', {}).tipo, 'carga');
   assert.equal(t().traducir('Algo.raro', {}), null);
 });
+
+import { limpiarControl } from '../src/pantalla.mjs';
+test('lo que viene de afuera se muestra sin códigos de control: no cambia la terminal ni falsifica renglones del registro', () => {
+  assert.equal(limpiarControl('hola\x1b[31m rojo\x1b]0;título falso\x07 fin'), 'hola [31m rojo ]0;título falso  fin');
+  assert.ok(!/[\u0000-\u001f\u007f-\u009f]/.test(limpiarControl('a\x1b[2Jb\x00c\x9bd\x07')));
+  assert.equal(limpiarControl('uno\ndos\r\ntres'), 'uno ⏎ dos ⏎ tres');
+  assert.equal(limpiarControl(null), '');
+  assert.equal(limpiarControl('con tilde ñ y emoji 🙂'), 'con tilde ñ y emoji 🙂');
+});

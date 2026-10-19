@@ -1,7 +1,7 @@
 // La conexión con el celular: abrir el sitio en su Chrome, conectarse a la consola de la pestaña y
 // rearmar todo cuando el celular se desconecta o ADB se reinicia.
 import { t } from '../idioma.mjs';
-import { cambio, contar, registrarAviso, registrarConsola } from './estado.mjs';
+import { cambio, contar, registrarAviso, registrarConsola, acortar } from './estado.mjs';
 import { reanudarEspejo } from './espejo.mjs';
 import { alCargar } from './frescura.mjs';
 import { mantenerDespierto } from './despierto.mjs';
@@ -22,6 +22,7 @@ export async function abrirEnCelular(app) {
 
 // La dirección que tiene abierta el celular, para mostrarla en el panel.
 function recordarPagina(app, url) {
+  url = acortar(url);
   if (!url || url === app.estado.celular.url) return;
   app.estado.celular.url = url;
   cambio(app);
@@ -39,7 +40,14 @@ function programarPedidos(app) {
 }
 
 // Busca la pestaña del sitio (esperando un poco si se acaba de abrir) y se conecta a su consola.
-export async function conectarConsola(app, intentos = 20) {
+// Solo corre una conexión a la vez: si llegan dos pedidos juntos (la reconexión automática y un clic en «Recargar»),
+// el segundo espera el resultado del primero. Dos conexiones a la vez dejarían una abierta de más, con eventos repetidos.
+export function conectarConsola(app, intentos = 20) {
+  if (!app.conectando) app.conectando = conectarConsolaAhora(app, intentos).finally(() => { app.conectando = null; });
+  return app.conectando;
+}
+
+async function conectarConsolaAhora(app, intentos) {
   const { estado, chrome } = app;
   for (let i = 0; i < intentos && !app.interno.cerrando; i++) {
     const pestana = await chrome.buscar(app.sitio.origen);

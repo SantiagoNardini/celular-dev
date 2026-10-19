@@ -81,10 +81,13 @@ export function contar(app, nivel, texto, solucion) {
   cambio(app);
 }
 
+// Lo que viene de la página puede ser enorme (un console.log de megas, una dirección data:): se corta.
+export const acortar = (texto, max = 2000) => { const s = String(texto == null ? '' : texto); return s.length > max ? `${s.slice(0, max)}…` : s; };
+
 // Un console.log / info de la página: va a su propia lista, sin mezclarse con los errores.
 export function registrarConsola(app, aviso) {
   const { estado, ui } = app;
-  estado.consolaLineas.unshift({ id: `${Date.now()}-${Math.random()}`, texto: aviso.texto, donde: aviso.donde, hora: ui.hora() });
+  estado.consolaLineas.unshift({ id: `${Date.now()}-${Math.random()}`, texto: acortar(aviso.texto), donde: acortar(aviso.donde, 300), hora: ui.hora() });
   if (estado.consolaLineas.length > 200) estado.consolaLineas.length = 200;
   cambio(app);
 }
@@ -92,6 +95,7 @@ export function registrarConsola(app, aviso) {
 // Un error o aviso del celular: se explica, se agrupa con los iguales y se cuenta.
 export function registrarAviso(app, aviso) {
   const { ui, estado, interno } = app;
+  aviso = { ...aviso, texto: acortar(aviso.texto), donde: acortar(aviso.donde, 300), dato: typeof aviso.dato === 'string' ? acortar(aviso.dato) : aviso.dato };
   const simple = explicar(aviso);
   const clave = `${aviso.tipo}|${aviso.texto}|${aviso.donde}`;
   let grupo = estado.avisos.find(a => a.clave === clave);
