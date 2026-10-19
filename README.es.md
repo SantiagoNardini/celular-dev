@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/img/logo.svg" alt="celular-dev" width="96">
+
 # celular-dev
 
 **Mirá tu sitio web en un celular Android real, directo desde tu PC.**<br>

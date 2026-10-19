@@ -91,3 +91,12 @@ test('acepta el cuerpo de una carpeta grande arrastrada (cientos de archivos)', 
   assert.equal(JSON.parse(r.datos).mensaje, "hecho");
   assert.equal(acciones.at(-1)[1].archivos.length, 300);
 });
+
+test('sirve el logo (vectorial y en PNG) para el panel y la pestaña del navegador', async () => {
+  const svg = await pedir({ ruta: '/logo.svg' });
+  assert.equal(svg.estado, 200);
+  assert.match(svg.tipo, /image\/svg\+xml/);
+  assert.match(svg.datos, /<svg[\s\S]*celular-dev/);
+  const png = await pedir({ ruta: '/icono.png' });
+  assert.deepEqual([png.estado, png.tipo], [200, 'image/png']);
+});

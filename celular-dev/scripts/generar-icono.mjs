@@ -1,6 +1,7 @@
-// Dibuja el ícono de celular-dev (un celular verde lima sobre un cuadrado verde oscuro) y lo guarda como
-// marca/icono.ico con los tamaños que usa Windows (16 a 256 px), y como marca/icono.png (256 px).
-// Sin librerías: las figuras se calculan píxel por píxel (con 4×4 muestras por píxel para bordes suaves)
+// Dibuja el ícono de celular-dev: un celular gris claro sobre fondo negro, con una página web adentro (la barra de
+// direcciones y dos bloques de contenido). Usa los grises y el negro del fondo del panel. Se guarda como
+// marca/icono.ico con los tamaños que usa Windows (16 a 256 px), como marca/icono.png (256 px) y como marca/icono.icns
+// (Mac). Sin librerías: las figuras se calculan píxel por píxel (con 4×4 muestras por píxel para bordes suaves)
 // y el PNG se arma a mano con zlib, que viene con Node.
 // Uso: node scripts/generar-icono.mjs
 import { deflateSync } from 'node:zlib';
@@ -8,9 +9,11 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const FONDO = [0x0b, 0x3d, 0x2e];
-const LIMA = [0xc6, 0xe0, 0x3a];
-const PANTALLA = [0x14, 0x51, 0x3f];
+const FONDO = [0x1b, 0x1b, 0x1b];      // la tarjeta del panel en oscuro (casi negro)
+const BORDE = [0x3d, 0x3d, 0x3d];      // el borde fuerte del panel
+const CUERPO = [0xd6, 0xd6, 0xd6];     // el celular, gris claro
+const GRIS = [0xa8, 0xa8, 0xa8];       // el texto secundario del panel: la página de adentro
+const PANTALLA = [0x12, 0x12, 0x12];   // el fondo del panel (negro)
 
 // distancia con signo a un rectángulo de esquinas redondeadas (negativa adentro); medidas de 0 a 1
 function rectRedondeado(x, y, cx, cy, ancho, alto, radio) {
@@ -21,18 +24,19 @@ function rectRedondeado(x, y, cx, cy, ancho, alto, radio) {
 
 // color del punto (x, y) del ícono, o null si es transparente
 function colorEn(x, y) {
-  if (rectRedondeado(x, y, 0.5, 0.5, 0.94, 0.94, 0.2) > 0) return null;
-  const cuerpo = rectRedondeado(x, y, 0.5, 0.5, 0.44, 0.74, 0.08);
-  if (cuerpo > 0) return FONDO;
-  if (rectRedondeado(x, y, 0.5, 0.47, 0.34, 0.52, 0.02) < 0) {
-    // en la pantalla, tres renglones como si fuera un sitio
-    for (const [ry, largo] of [[0.33, 0.22], [0.42, 0.16], [0.51, 0.19]]) {
-      if (rectRedondeado(x, y, 0.5 - (0.22 - largo) / 2, ry, largo, 0.035, 0.017) < 0) return LIMA;
-    }
+  const marco = rectRedondeado(x, y, 0.5, 0.5, 0.94, 0.94, 0.22);
+  if (marco > 0) return null;
+  if (marco > -0.016) return BORDE;                                                   // un filo gris, para que no se pierda sobre fondos oscuros
+  if (rectRedondeado(x, y, 0.5, 0.5, 0.46, 0.76, 0.095) > 0) return FONDO;          // fuera del celular
+  if (rectRedondeado(x, y, 0.5, 0.5, 0.372, 0.64, 0.045) < 0) {                       // la pantalla, con una página web
+    if (rectRedondeado(x, y, 0.5, 0.3, 0.3, 0.075, 0.0375) < 0) return GRIS;       // la barra de direcciones
+    if (rectRedondeado(x, y, 0.5, 0.455, 0.3, 0.15, 0.025) < 0) return GRIS;       // un bloque (imagen)
+    if (rectRedondeado(x, y, 0.5, 0.585, 0.3, 0.03, 0.015) < 0) return GRIS;       // renglón
+    if (rectRedondeado(x, y, 0.455, 0.65, 0.21, 0.03, 0.015) < 0) return GRIS;     // renglón corto
     return PANTALLA;
   }
-  if (Math.hypot(x - 0.5, y - 0.79) < 0.032) return FONDO;   // botón de inicio
-  return LIMA;
+  if (rectRedondeado(x, y, 0.5, 0.153, 0.1, 0.02, 0.01) < 0) return FONDO;           // el altavoz
+  return CUERPO;
 }
 
 function dibujar(tamano) {
