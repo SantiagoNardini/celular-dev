@@ -14,7 +14,7 @@
     "ejemplo"
   ],
   "scripts": {
-    "test": "node --test",
+    "test": "node --test --test-force-exit --test-timeout=60000",
     "start": "node bin/celular.mjs",
     "empaquetar": "node scripts/empaquetar.mjs",
     "icono": "node scripts/generar-icono.mjs"

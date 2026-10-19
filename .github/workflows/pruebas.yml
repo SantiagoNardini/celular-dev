@@ -7,10 +7,16 @@ on:
     branches: [main]
   pull_request:
 
+# un cambio nuevo cancela las pruebas viejas de la misma rama: no se acumulan si alguna se demora
+concurrency:
+  group: pruebas-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   pruebas:
     name: ${{ matrix.sistema }} · Node ${{ matrix.node }}
     runs-on: ${{ matrix.sistema }}
+    timeout-minutes: 15   # si algo se cuelga, falla en minutos y no en horas
     strategy:
       fail-fast: false
       matrix:
@@ -27,4 +33,17 @@ jobs:
           node-version: ${{ matrix.node }}
       - name: Pruebas
         working-directory: celular-dev
-        run: npm test
+        shell: bash
+        run: |
+          set -o pipefail
+          npm test 2>&1 | tee ../prueba.log
+      - name: Resumen (visible en la página de la ejecución)
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "### ${{ matrix.sistema }} · Node ${{ matrix.node }}"
+            echo '```'
+            grep -E '^(ℹ|✖)|not ok|Error|timed out|cancelled' prueba.log | head -60 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
