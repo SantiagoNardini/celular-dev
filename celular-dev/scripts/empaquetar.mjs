@@ -132,10 +132,10 @@ async function armar(clave) {
   const agregar = (ruta, datos, modo) => entradas.push({ nombre: `${nombre}/${ruta}`, datos, modo });
 
   paso('Juntando el programa…');
-  for (const parte of ['bin', 'src', 'marca']) {
+  for (const parte of ['bin', 'src', 'marca', 'ejemplo']) {
     for (const archivo of listar(join(programa, parte))) agregar(`celular-dev/${parte}/${archivo}`, readFileSync(join(programa, parte, archivo)), parte === 'bin' ? ejecutable : undefined);
   }
-  for (const archivo of ['package.json', 'README.md']) agregar(`celular-dev/${archivo}`, readFileSync(join(programa, archivo)));
+  for (const archivo of ['package.json', 'README.md', 'LICENSE']) agregar(`celular-dev/${archivo}`, readFileSync(join(programa, archivo)));
   agregar(sistema.lanzador, readFileSync(join(raiz, sistema.lanzador)), ejecutable);
   // en Mac, celular-dev.command usa celular-dev.sh
   if (sistema.lanzador === 'celular-dev.command') agregar('celular-dev.sh', readFileSync(join(raiz, 'celular-dev.sh')), ejecutable);

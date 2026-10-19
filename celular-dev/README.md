@@ -21,6 +21,8 @@ Probá tu sitio en tu **celular Android real** mientras programás en la computa
 - Un **asistente** te guía para preparar el celular, con una animación de cada pantalla que hay que recorrer (activar la depuración USB, el aviso de «Permitir»). Los pasos se tildan solos. La primera vez que todo funciona, un aviso te invita a tocar el celular desde el panel.
 - En **inglés o español**: arranca en inglés; el botón «Español» del panel lo cambia y lo recuerda (o `--idioma es`).
 
+Para probarlo sin un sitio propio, usá la carpeta `ejemplo/` (dos botones que fallan a propósito): `node bin/celular.mjs --carpeta ejemplo`. Con Node 22+ también: `npx github:SantiagoNardini/celular-dev`.
+
 Sin dependencias: solo Node 22 o más nuevo, y ADB (el panel lo descarga con un botón).
 
 ## Instalación

@@ -1,0 +1,12 @@
+:root { --acento: #2563eb; }
+* { box-sizing: border-box; }
+body { margin: 0; font: 16px/1.5 system-ui, sans-serif; background: #f6f7fb; color: #1b1f2a; }
+main { max-width: 520px; margin: 0 auto; padding: 36px 22px; }
+.etiqueta { color: var(--acento); font-weight: 600; font-size: 14px; margin: 0 0 8px; }
+h1 { font-size: 30px; line-height: 1.15; margin: 0 0 14px; }
+code { background: #e6e9f2; padding: 1px 6px; border-radius: 5px; font-size: 14px; }
+.botones { display: grid; gap: 12px; margin: 26px 0 14px; }
+button { font: inherit; font-weight: 600; padding: 14px 18px; border: 0; border-radius: 12px; background: var(--acento); color: #fff; }
+button + button { background: #1b1f2a; }
+.nota { color: #5b6275; font-size: 14px; }
+#imagenes img { width: 100%; border-radius: 12px; margin-top: 12px; }

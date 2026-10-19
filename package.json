@@ -1,0 +1,47 @@
+{
+  "name": "celular-dev",
+  "version": "0.4.0",
+  "description": "See your site on a real Android phone from your PC over USB: live reload, a live touchable mirror, and the phone's errors explained in plain language. No dependencies.",
+  "type": "module",
+  "bin": {
+    "celular-dev": "celular-dev/bin/celular.mjs",
+    "celular": "celular-dev/bin/celular.mjs"
+  },
+  "files": [
+    "celular-dev/bin",
+    "celular-dev/src",
+    "celular-dev/marca",
+    "celular-dev/ejemplo",
+    "celular-dev/README.md",
+    "README.es.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "start": "node celular-dev/bin/celular.mjs",
+    "test": "node --test celular-dev/test"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "android",
+    "adb",
+    "celular",
+    "mobile",
+    "live-reload",
+    "devtools",
+    "debug",
+    "screen-mirror",
+    "i18n"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SantiagoNardini/celular-dev.git"
+  },
+  "homepage": "https://github.com/SantiagoNardini/celular-dev#readme",
+  "bugs": {
+    "url": "https://github.com/SantiagoNardini/celular-dev/issues"
+  },
+  "author": "Santiago Nardini"
+}

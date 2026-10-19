@@ -4,12 +4,14 @@
   "description": "Probá tu sitio en tu celular Android real desde Windows, Mac o Linux: lo abre por cable, lo recarga al guardar, te muestra sus errores explicados y su pantalla en vivo.",
   "type": "module",
   "bin": {
+    "celular-dev": "bin/celular.mjs",
     "celular": "bin/celular.mjs"
   },
   "files": [
     "bin",
     "src",
-    "marca"
+    "marca",
+    "ejemplo"
   ],
   "scripts": {
     "test": "node --test",
@@ -31,5 +33,14 @@
     "screen-mirror",
     "i18n"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SantiagoNardini/celular-dev.git"
+  },
+  "homepage": "https://github.com/SantiagoNardini/celular-dev#readme",
+  "bugs": {
+    "url": "https://github.com/SantiagoNardini/celular-dev/issues"
+  },
+  "author": "Santiago Nardini"
 }
