@@ -17,6 +17,7 @@ const ARCHIVOS = {
   '/': ['index.html', 'text/html; charset=utf-8'],
   '/panel.css': ['panel.css', 'text/css; charset=utf-8'],
   '/panel.js': ['panel.js', 'text/javascript; charset=utf-8'],
+  '/herramientas.js': ['herramientas.js', 'text/javascript; charset=utf-8'],
   '/icono.png': [join('..', '..', 'marca', 'icono.png'), 'image/png']
 };
 const HOSTS = new Set([`127.0.0.1:${PUERTO_PANEL}`, `localhost:${PUERTO_PANEL}`]);

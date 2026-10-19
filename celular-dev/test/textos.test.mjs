@@ -18,7 +18,9 @@ function archivos(carpeta) {
 // Las claves fijas que usa el código, y las armadas con una variable conocida (modo.${...}, red.${...}).
 const VARIABLES = {
   'modo.': ['vivo', 'manual', 'live-server'], 'resumen.recarga.': ['vivo', 'manual', 'live-server'],
-  'red.': ['normal', 'lenta', 'sin-conexion'], 'accesos.listo.': ['win32', 'darwin', 'linux'], 'oferta.': ['win32', 'darwin', 'linux']
+  'red.': ['normal', 'lenta', 'sin-conexion'],
+  'cond.esquema.': ['auto', 'oscuro', 'claro'], 'cond.animaciones.': ['normal', 'reducidas'], 'cond.contraste.': ['normal', 'alto'],
+  'cond.vision.': ['ninguna', 'borrosa', 'protanopia', 'deuteranopia', 'tritanopia', 'acromatopsia'], 'cond.lugar.': ['real', 'buenos-aires', 'madrid', 'nueva-york', 'tokio'], 'red.filtro.': ['pesados', 'errores', 'todos'], 'accesos.listo.': ['win32', 'darwin', 'linux'], 'oferta.': ['win32', 'darwin', 'linux']
 };
 function usadas(texto, funcion) {
   const lista = new Set();
@@ -45,14 +47,14 @@ test('los dos idiomas tienen los mismos {datos} en cada texto', () => {
 test('cada texto que usa el programa existe', () => {
   const faltan = [];
   for (const archivo of [...archivos(join(programa, 'src')), ...archivos(join(programa, 'bin'))]) {
-    if (archivo.includes('textos') || archivo.endsWith('panel.js')) continue;
+    if (archivo.includes('textos') || archivo.endsWith('panel.js') || archivo.endsWith('herramientas.js')) continue;
     for (const clave of usadas(readFileSync(archivo, 'utf8'), 't')) if (!(clave in es)) faltan.push(`${clave} (${archivo})`);
   }
   assert.deepEqual(faltan, []);
 });
 
 test('cada texto que usa el panel existe, y son solo cadenas (viajan al navegador)', () => {
-  const panel = readFileSync(join(programa, 'src', 'panel', 'panel.js'), 'utf8');
+  const panel = ['panel.js', 'herramientas.js'].map(f => readFileSync(join(programa, 'src', 'panel', f), 'utf8')).join(' ');
   const faltan = [...usadas(panel, 'tr'), ...usadas(panel, 'trSin')].filter(c => !(c in es.panel));
   assert.deepEqual(faltan, []);
   for (const [k, v] of Object.entries(es.panel)) assert.equal(typeof v, 'string', k);

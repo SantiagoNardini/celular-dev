@@ -8,3 +8,7 @@ document.getElementById('error-red').addEventListener('click', () => {
   img.src = '/img/no-existe.png';   // this file does not exist
   document.getElementById('imagenes').append(img);
 });
+
+// A visit counter in localStorage and a cookie, so there is something to look at in the "Site data" tab.
+localStorage.setItem('visits', String(Number(localStorage.getItem('visits') || 0) + 1));
+document.cookie = 'demo=celular-dev; path=/';

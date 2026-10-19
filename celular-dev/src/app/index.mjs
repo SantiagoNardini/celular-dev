@@ -23,6 +23,7 @@ import { recargar, alAccion } from './acciones.mjs';
 import { espejoInicial, mirarEspejo, alCuadro } from './espejo.mjs';
 import { mostrarResumen } from './teclas.mjs';
 import { mantenerDespierto, devolverPantalla } from './despierto.mjs';
+import { RegistroPedidos } from './pedidos.mjs';
 import { versionActual, buscarVersionPublicada, revisarNovedad } from './novedad.mjs';
 
 const espera = ms => new Promise(r => setTimeout(r, ms));
@@ -51,6 +52,7 @@ export function crearApp({ opciones = {}, cwd = process.cwd(), deps = {}, tiempo
     tiempos: { opciones: 3000, servidor: 3000, reintento: 2000, pestana: 500, adb: 3000, chrome: 5000, nitido: 300, frescuraVivo: 8000, frescuraLive: 10000, ...tiempos },
     interno: { cerrando: false, inicio: Date.now(), modoElegido: estado.modo, capturas: [], impreso: new Map(), servidoresVistos: new Map() },
     espejo: espejoInicial(),
+    pedidos: new RegistroPedidos(),
     relojes: {},
     adb: null, chrome: null, traductor: null, panel: null, sitio: null, puertoDevtools: 0, ultimaCarga: 0, pantallaReal: null,
     dejarDeVigilar: null, alElegirSitio: null, rearmando: null

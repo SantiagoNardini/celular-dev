@@ -18,6 +18,7 @@ import { tamanoDe, paraChrome, cabe } from './tamanos.mjs';
 import { limpiarSoltada } from '../buscar-carpeta.mjs';
 import { ocultarNovedad } from './novedad.mjs';
 import { armarDiagnostico } from './diagnostico.mjs';
+import { elegirCondicion, reiniciarCondiciones, celularLento, inspeccionar, cerrarInspeccion, leerDatos, borrarDato, empezarDeCero } from './herramientas.mjs';
 
 const sello = (ui, d) => `${ui.fecha(d)}_${ui.hora(d).replace(/:/g, '-')}`;
 
@@ -103,6 +104,8 @@ export async function cambiarRed(app, perfil) {
   try {
     await chrome.red(perfil);
     estado.red = perfil;
+    // si se eligió otra red a mano, ya no es el «celular lento»
+    if (estado.lento && perfil !== 'lenta') { estado.lento = false; await chrome.cpu(1).catch(() => {}); }
     contar(app, perfil === 'normal' ? 'ok' : 'aviso', perfil === 'normal' ? t('accion.redNormal') : t('accion.redSimulada', { red: nombreRed(perfil) }));
     await recargar(app);
     return { mensaje: t('accion.redCorto', { red: nombreRed(perfil) }) };
@@ -342,6 +345,15 @@ export async function alAccion(app, accion, valor) {
       if (!app.adb || !app.adb.elegir(String(valor))) return { error: t('accion.celularYaNo') };
       return { mensaje: t('accion.celularElegido') };
     }
+    case 'condicion': return elegirCondicion(app, valor);
+    case 'condiciones-reiniciar': return reiniciarCondiciones(app);
+    case 'celular-lento': return celularLento(app, recargar);
+    case 'inspeccionar': return inspeccionar(app, valor);
+    case 'inspeccion-cerrar': return cerrarInspeccion(app);
+    case 'datos-leer': return leerDatos(app);
+    case 'dato-borrar': return borrarDato(app, valor);
+    case 'datos-limpiar': return empezarDeCero(app, recargar);
+    case 'pedidos-limpiar': app.pedidos.reiniciar(); estado.pedidos = app.pedidos.resumen(sitio ? sitio.origen : ''); cambio(app); return {};
     case 'diagnostico': return { texto: await armarDiagnostico(app) };
     case 'ver-novedad':
       // la dirección sale del estado, no del panel

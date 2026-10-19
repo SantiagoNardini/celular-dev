@@ -246,6 +246,147 @@ test('la consola del celular: console.log y info van a su lista, no a los errore
   await p.terminado;
 });
 
+test('condiciones de prueba: tema, animaciones, visión y lugar se aplican y se reaplican al reconectar', async () => {
+  const p = armar({ opciones: { carpeta: carpetaSitio } });
+  await arrancarHastaCorrer(p);
+  assert.match((await accion('condicion', { clave: 'esquema', valor: 'oscuro' })).mensaje, /oscuro/);
+  assert.equal(p.chrome.mediosPedidos.at(-1).esquema, 'oscuro');
+  await accion('condicion', { clave: 'animaciones', valor: 'reducidas' });
+  assert.deepEqual([p.chrome.mediosPedidos.at(-1).esquema, p.chrome.mediosPedidos.at(-1).animaciones], ['oscuro', 'reducidas'], 'se mantienen las anteriores');
+  await accion('condicion', { clave: 'vision', valor: 'protanopia' });
+  assert.equal(p.chrome.visiones.at(-1), 'protanopia');
+  await accion('condicion', { clave: 'lugar', valor: 'madrid' });
+  assert.deepEqual(p.chrome.lugares.at(-1), { zona: 'Europe/Madrid', idioma: 'es-ES', lat: 40.4168, lon: -3.7038 });
+  assert.ok((await accion('condicion', { clave: 'esquema', valor: 'violeta' })).error, 'una opción que no existe no se acepta');
+  assert.ok((await accion('condicion', { clave: 'nada', valor: 'x' })).error);
+  assert.equal(p.estado.condiciones.esquema, 'oscuro');
+
+  // al reconectar con la pestaña, se vuelve a pedir todo
+  const antes = p.chrome.mediosPedidos.length;
+  p.chrome.perderPestana();
+  await hasta(() => p.estado.consola === true, { que: 'reconectar la consola' });
+  assert.ok(p.chrome.mediosPedidos.length > antes);
+  assert.equal(p.chrome.mediosPedidos.at(-1).esquema, 'oscuro');
+  assert.equal(p.chrome.visiones.at(-1), 'protanopia');
+
+  assert.match((await accion('condiciones-reiniciar')).mensaje, /reiniciadas/);
+  assert.deepEqual(p.estado.condiciones, { esquema: 'auto', animaciones: 'normal', contraste: 'normal', vision: 'ninguna', lugar: 'real' });
+  assert.equal(p.chrome.lugares.at(-1), null);
+
+  await p.app.salir(0);
+  await p.terminado;
+});
+
+test('celular lento: red 3G y procesador más lento de una vez; elegir otra red a mano lo apaga', async () => {
+  const p = armar({ opciones: { carpeta: carpetaSitio } });
+  await arrancarHastaCorrer(p);
+  const recargas = p.chrome.recargas;
+  assert.match((await accion('celular-lento')).mensaje, /activado/);
+  assert.equal(p.estado.lento, true);
+  assert.equal(p.estado.red, 'lenta');
+  assert.equal(p.chrome.redes.at(-1), 'lenta');
+  assert.equal(p.chrome.cpus.at(-1), 4);
+  assert.equal(p.chrome.recargas, recargas + 1, 'recarga para ver cómo carga');
+  // al reconectar vuelve a quedar lento
+  p.chrome.perderPestana();
+  await hasta(() => p.estado.consola === true, { que: 'reconectar la consola' });
+  assert.equal(p.chrome.cpus.at(-1), 4);
+  // otra red a mano: ya no es el celular lento
+  await accion('red', 'normal');
+  assert.equal(p.estado.lento, false);
+  assert.equal(p.chrome.cpus.at(-1), 1);
+  await accion('celular-lento');
+  assert.match((await accion('celular-lento')).mensaje, /normales|apagado/);
+  assert.equal(p.estado.red, 'normal');
+  assert.equal(p.chrome.cpus.at(-1), 1);
+  await p.app.salir(0);
+  await p.terminado;
+});
+
+test('inspector: tocar un elemento del espejo dice qué es, dónde está y avisa si es muy chico', async () => {
+  const p = armar({ opciones: { carpeta: carpetaSitio } });
+  await arrancarHastaCorrer(p);
+  p.chrome.elemento = { selector: 'main > button.comprar', etiqueta: 'button', id: '', clases: ['comprar'], texto: 'Comprar', rect: { x: 20, y: 100, ancho: 30, alto: 30 }, pantalla: { ancho: 411, alto: 773 }, estilos: {}, interactivo: true, nombre: 'Comprar', rol: '', desborde: false, atributos: [] };
+  assert.deepEqual(await accion('inspeccionar', { x: 0.5, y: 0.5 }), {});
+  assert.deepEqual(p.chrome.inspeccionado, { fx: 0.5, fy: 0.5 }, 'la página pasa la fracción a sus píxeles');
+  assert.equal(p.estado.inspeccion.selector, 'main > button.comprar');
+  // sin elemento ahí
+  p.chrome.elemento = null;
+  assert.match((await accion('inspeccionar', { x: 0.1, y: 0.1 })).error, /ningún elemento/);
+  assert.equal(p.estado.inspeccion.selector, 'main > button.comprar', 'lo anterior queda');
+  // se cierra a mano, y al cargar otra página
+  await accion('inspeccion-cerrar');
+  assert.equal(p.estado.inspeccion, null);
+  p.chrome.elemento = { selector: 'h1', etiqueta: 'h1', rect: { x: 0, y: 0, ancho: 10, alto: 10 }, pantalla: { ancho: 411, alto: 773 }, estilos: {}, atributos: [] };
+  await accion('inspeccionar', { x: 0.2, y: 0.2 });
+  assert.ok(p.estado.inspeccion);
+  p.chrome.evento('Page.frameNavigated', { frame: { id: 'F', url: p.app.sitio.url } });
+  assert.equal(p.estado.inspeccion, null, 'al cargar otra página el elemento ya no está donde estaba');
+  await p.app.salir(0);
+  await p.terminado;
+});
+
+test('pedidos de red: se ven el peso y el tiempo de cada uno, lo que falla, y se reinicia al cargar la página', async () => {
+  const p = armar({ opciones: { carpeta: carpetaSitio } });
+  await arrancarHastaCorrer(p);
+  const origen = p.app.sitio.origen;
+  const pedir = (id, tipo, ruta, ini, fin, estadoHttp, bytes, extra = {}) => {
+    p.chrome.evento('Network.requestWillBeSent', { requestId: id, loaderId: id, frameId: 'F', type: tipo, timestamp: ini, request: { url: `${origen}${ruta}`, method: 'GET' } });
+    p.chrome.evento('Network.responseReceived', { requestId: id, response: { status: estadoHttp, mimeType: tipo === 'Image' ? 'image/png' : 'text/html', ...extra } });
+    if (bytes != null) p.chrome.evento('Network.loadingFinished', { requestId: id, timestamp: fin, encodedDataLength: bytes });
+  };
+  pedir('1', 'Document', '/', 10, 10.2, 200, 2048);
+  pedir('2', 'Image', '/img/foto.png', 10.3, 11.6, 200, 3 * 1024 * 1024);
+  pedir('3', 'Image', '/img/falta.png', 10.4, 10.5, 404, 120);
+  p.chrome.evento('Network.requestWillBeSent', { requestId: '4', loaderId: '4', frameId: 'F', type: 'Fetch', timestamp: 10.5, request: { url: `${origen}/api/x`, method: 'POST' } });
+  p.chrome.evento('Network.loadingFailed', { requestId: '4', timestamp: 10.6, errorText: 'net::ERR_CONNECTION_REFUSED' });
+  await hasta(() => p.estado.pedidos.total === 4, { que: 'juntar los pedidos' });
+  const { filas, bytes } = p.estado.pedidos;
+  const foto = filas.find(f => f.id === '2');
+  assert.deepEqual([foto.ruta, foto.tipo, foto.estado, foto.tamano, foto.tiempo], ['/img/foto.png', 'Image', 200, 3145728, 1300]);
+  assert.equal(filas.find(f => f.id === '4').fallo, 'net::ERR_CONNECTION_REFUSED');
+  assert.equal(filas.find(f => f.id === '3').estado, 404);
+  assert.equal(bytes, 2048 + 3145728 + 120);
+  // una carga nueva de la página principal empieza de cero
+  p.chrome.evento('Network.requestWillBeSent', { requestId: '5', loaderId: '5', frameId: 'F', type: 'Document', timestamp: 20, request: { url: `${origen}/otra`, method: 'GET' } });
+  await hasta(() => p.estado.pedidos.total === 1, { que: 'empezar de cero con la página nueva' });
+  // un documento de otro marco (un iframe) no borra lo de la página
+  p.chrome.evento('Page.frameNavigated', { frame: { id: 'F', url: `${origen}/otra` } });
+  p.chrome.evento('Network.requestWillBeSent', { requestId: '6', loaderId: '6', frameId: 'IFRAME', type: 'Document', timestamp: 21, request: { url: 'https://otro.com/anuncio', method: 'GET' } });
+  await hasta(() => p.estado.pedidos.total === 2, { que: 'sumar el pedido del iframe' });
+  assert.equal(p.estado.pedidos.filas[0].ruta, 'otro.com/anuncio');
+  await accion('pedidos-limpiar');
+  assert.equal(p.estado.pedidos.total, 0);
+  await p.app.salir(0);
+  await p.terminado;
+});
+
+test('datos del sitio: lee almacenamiento y cookies, borra uno, o empieza de cero y recarga', async () => {
+  const p = armar({ opciones: { carpeta: carpetaSitio } });
+  await arrancarHastaCorrer(p);
+  p.chrome.almacen = { local: [{ clave: 'token', valor: 'abc', largo: 3 }], sesion: [], serviceWorkers: 1, caches: ['v1'], bases: ['pedidos'] };
+  p.chrome.cookiesDelSitio = [{ name: 'sid', value: 'xyz', domain: 'localhost', path: '/', httpOnly: true, secure: false }];
+  assert.deepEqual(await accion('datos-leer'), {});
+  const d = p.estado.datosSitio;
+  assert.deepEqual([d.local.length, d.sesion.length, d.serviceWorkers, d.caches, d.bases], [1, 0, 1, ['v1'], ['pedidos']]);
+  assert.deepEqual(d.cookies, [{ nombre: 'sid', valor: 'xyz', dominio: 'localhost', ruta: '/', soloHttp: true, segura: false }]);
+  assert.equal(d.origen, p.app.sitio.origen);
+
+  assert.match((await accion('dato-borrar', { tipo: 'cookie', clave: 'sid', dominio: 'localhost', ruta: '/' })).mensaje, /Borrado/);
+  assert.deepEqual(p.chrome.cookiesBorradas, [['sid', 'localhost', '/']]);
+  await accion('dato-borrar', { tipo: 'local', clave: 'token' });
+  assert.deepEqual(p.chrome.corridas.at(-1), { almacen: 'local', clave: 'token' });
+  assert.ok((await accion('dato-borrar', { tipo: 'otra', clave: 'x' })).error);
+  assert.ok((await accion('dato-borrar', 'texto')).error);
+
+  const recargas = p.chrome.recargas;
+  assert.match((await accion('datos-limpiar')).mensaje, /de cero/);
+  assert.deepEqual(p.chrome.datosBorrados, [p.app.sitio.origen]);
+  assert.equal(p.chrome.recargas, recargas + 1, 'recarga como si fuera la primera visita');
+  await p.app.salir(0);
+  await p.terminado;
+});
+
 test('un solo botón para arreglar lo que falla: el celular, el servidor o la pestaña de Chrome', async () => {
   const servidor = createServer((_, r) => r.end('<!doctype html><h1>Servidor</h1>'));
   await new Promise(r => servidor.listen(0, '127.0.0.1', r));

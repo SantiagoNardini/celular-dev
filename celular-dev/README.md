@@ -15,6 +15,10 @@ Probá tu sitio en tu **celular Android real** mientras programás en la computa
 - **Consola del celular** en el panel: los `console.log` e info de tu página, aparte de los errores.
 - **Copiar diagnóstico:** un botón que junta versiones, estado de ADB, celulares vistos y lo último que pasó (sin datos personales), para pegarlo cuando pidas ayuda.
 - Si el celular no aparece, el asistente explica lo más común: cable que solo carga, modo de USB, puerto y driver USB en Windows.
+- **Condiciones de prueba** (cuadro de herramientas del panel): tema oscuro o claro, animaciones reducidas, contraste alto, daltonismo y visión borrosa, otro lugar (zona horaria, idioma y ubicación) y el **celular lento** (red 3G y procesador 4 veces más despacio), de un clic. Se vuelven a aplicar solas si se reconecta la pestaña.
+- **Inspector:** el botón de la mira junto al espejo, y después tocás un elemento: selector, tamaño, colores, letra, espaciado, aviso si es muy chico para tocarlo y «Copiar para la IA».
+- **Red:** todos los pedidos de la página con peso y tiempo, lo que más pesa (con consejos), lo que falla, y copiar como `curl`.
+- **Datos del sitio:** almacenamiento local, de sesión, cookies, service workers, caché e IndexedDB; borrar uno, o **Empezar de cero** (solo de ese sitio) y recargar.
 - **Vista compacta** (botón de la cabecera): solo el celular y los errores, para dejar la ventana al costado mientras editás.
 - Avisa si hay una **versión nueva** publicada en GitHub (una sola consulta al abrir, sin mandar nada tuyo; se apaga con `CELULAR_SIN_ACTUALIZACIONES=1`).
 - Con la campana de la cabecera, el sistema te **avisa** si el celular se desconecta, el servidor se apaga o aparece un error grave aunque el panel esté tapado.

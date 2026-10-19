@@ -66,6 +66,8 @@ function avisar(texto, mal = false) {
 const pedir = (accion, valor) => fetch('/api/accion', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Celular': '1' }, body: JSON.stringify({ accion, valor }) });
 
 async function accion(nombre, valor, boton) {
+  // los botones con varios datos los llevan como JSON
+  if (typeof valor === 'string' && valor[0] === '{') { try { valor = JSON.parse(valor); } catch { /* se manda como texto */ } }
   // el botón se marca enseguida, aunque el celular tarde en contestar
   if (boton) boton.classList.add('ocupado');
   try {
@@ -107,6 +109,20 @@ document.addEventListener('click', e => {
   }
   if (boton && boton.dataset.accion === 'avisos') { alternarAvisos(); return; }
   if (boton && boton.dataset.accion === 'elegir-celular') { accion('elegir-celular', boton.dataset.valor, boton); return; }
+  if (boton && boton.dataset.accion === 'herramienta') { elegirHerramienta(boton.dataset.valor); return; }
+  if (boton && boton.dataset.accion === 'inspeccionar-modo') { alternarInspeccion(); return; }
+  if (boton && boton.dataset.accion === 'filtro-red') { filtroRed = boton.dataset.valor; dibujar(); return; }
+  if (boton && boton.dataset.accion === 'inspector-copiar') {
+    const i = estado && estado.inspeccion;
+    if (i) navigator.clipboard.writeText(boton.dataset.valor === 'ia' ? textoInspectorParaIa(i) : i.selector).then(() => avisar(tr(boton.dataset.valor === 'ia' ? 'errores.copiado' : 'inspector.copiado'))).catch(() => avisar(i.selector));
+    return;
+  }
+  if (boton && boton.dataset.accion === 'copiar-curl') {
+    const x = estado && estado.pedidos.filas.find(f => f.id === boton.dataset.valor);
+    if (x) navigator.clipboard.writeText(comandoCurl(x)).then(() => avisar(tr('red.curlCopiado'))).catch(() => avisar(comandoCurl(x)));
+    return;
+  }
+  if (boton && boton.dataset.accion === 'datos-limpiar' && !confirm(tr('datos.confirmar'))) return;
   if (boton && boton.dataset.accion === 'compacto') { alternarCompacto(); return; }
   if (boton && !boton.classList.contains('ocupado')) accion(boton.dataset.accion, boton.dataset.valor, boton);
 });
@@ -409,6 +425,7 @@ function vistaPanel() {
     novedad: s.novedad ? `<div class="banda suave novedad"><p>${tr('novedad.texto', { version: s.novedad.version })}</p><button class="chico" data-accion="ver-novedad">${tr('novedad.ver')}</button><button class="chico fantasma" data-accion="ocultar-novedad">${tr('novedad.ahoraNo')}</button></div>` : '',
     problema: avisoProblema(s),
     desactualizado: avisoDesactualizado(s),
+    herramientas: vistaHerramientas(s),
     tamano: selectorTamano(s),
     bienvenida: s.primerExito && s.espejo ? `<section class="tarjeta bienvenida">
         <span class="marca-ok">${ic('tilde')}</span>
@@ -421,6 +438,7 @@ function vistaPanel() {
         <button data-accion="atras" title="${tr('espejo.atras')}" aria-label="${tr('espejo.atras')}">${ic('atras')}</button>
         <button data-accion="recargar" title="${tr('panel.recargar')}" aria-label="${tr('panel.recargar')}">${ic('recargar')}</button>
         <button data-accion="captura" title="${tr('panel.captura')}" aria-label="${tr('panel.captura')}">${ic('captura')}</button>
+        <button data-accion="inspeccionar-modo" class="${inspeccionando ? 'activa' : ''}" aria-pressed="${inspeccionando}" title="${tr('inspector.modo')}" aria-label="${tr('inspector.modo')}">${ic('inspeccionar')}</button>
         <button data-accion="abrir" title="${tr('panel.abrirDeNuevo')}" aria-label="${tr('panel.abrirDeNuevo')}">${ic('abrir')}</button>
       </div>
       <p class="estado-espejo">${s.espejo ? `<span class="vivo">${tr('espejo.enVivo')}</span> · ${tr('espejo.ayuda')}` : tr('espejo.titulo')} · ${modo}${s.red !== 'normal' ? ` · <b class="alerta-texto">${tr('panel.red')} ${nombreRed(s.red)}</b>` : ''}</p>`
@@ -492,6 +510,7 @@ const ESQUELETOS = {
       <div data-zona="bienvenida"></div>
       <div class="metricas" data-zona="metricas"></div>
       <div data-zona="botones"></div>
+      <section class="tarjeta herramientas" data-zona="herramientas"></section>
       <section class="tarjeta lista" data-zona="revision"></section>
       <section class="tarjeta lista" data-zona="errores" aria-live="polite"></section>
       <section class="tarjeta lista" data-zona="consola"></section>
@@ -499,6 +518,7 @@ const ESQUELETOS = {
     </div><div>
       <div class="telefono espejo"><div class="pantalla">
         <canvas id="espejo" tabindex="0" role="img"></canvas>
+        <div id="resaltado" class="resaltado" hidden></div>
         <div class="tapa" data-zona="espejoTapa"></div>
         <div class="sugerencia" data-zona="espejoSugerencia"></div>
       </div></div>
@@ -540,6 +560,7 @@ function dibujar() {
   const lienzo = document.getElementById('espejo');
   if (lienzo) lienzo.setAttribute('aria-label', tr('espejo.alt'));
   actualizarEspejo();
+  dibujarResaltado();
 }
 
 // ---------- Espejo ----------
@@ -683,6 +704,11 @@ document.addEventListener('pointerdown', e => {
   if (e.target.id !== 'espejo' || !estado || !estado.espejo || e.button > 0) return;
   e.preventDefault();
   e.target.focus();
+  if (inspeccionando) {
+    const { x, y } = enImagen(e);
+    pedir('inspeccionar', { x, y }).then(r => r.json()).then(d => { if (d.error) avisar(d.error, true); }).catch(() => {});
+    return;
+  }
   e.target.setPointerCapture(e.pointerId);
   tocando = true;
   marcarToque(e);

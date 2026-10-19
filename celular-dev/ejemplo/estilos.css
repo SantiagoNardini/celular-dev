@@ -10,3 +10,8 @@ button { font: inherit; font-weight: 600; padding: 14px 18px; border: 0; border-
 button + button { background: #1b1f2a; }
 .nota { color: #5b6275; font-size: 14px; }
 #imagenes img { width: 100%; border-radius: 12px; margin-top: 12px; }
+@media (prefers-color-scheme: dark) {
+  body { background: #10131c; color: #e8ebf5; }
+  code { background: #232a3b; }
+  .nota { color: #9aa3b8; }
+}

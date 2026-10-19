@@ -8,6 +8,8 @@ import { tieneSitio } from '../estatico.mjs';
 export const REDES = ['normal', 'lenta', 'sin-conexion'];
 export const nombreRed = red => t(`red.${red}`);
 
+export const condicionesIniciales = () => ({ esquema: 'auto', animaciones: 'normal', contraste: 'normal', vision: 'ninguna', lugar: 'real' });
+
 export function estadoInicial({ carpetaProyecto, esProyecto, manual }) {
   return {
     fase: 'adb',                       // adb | inicio | preparando | corriendo
@@ -40,6 +42,11 @@ export function estadoInicial({ carpetaProyecto, esProyecto, manual }) {
     revisando: false,
     recargas: 0,
     errores: 0,
+    condiciones: condicionesIniciales(),   // lo que se simula en el celular: tema, animaciones, contraste, visión, lugar
+    lento: false,                      // el «celular lento»: red 3G y procesador más despacio
+    inspeccion: null,                  // el elemento tocado en modo inspección
+    datosSitio: null,                  // lo que el sitio guardó en el celular (se lee a pedido)
+    pedidos: { total: 0, bytes: 0, filas: [] },   // los pedidos de red de la página
     celulares: [],                     // los celulares que ve ADB: { serie, estado, nombre } (para elegir si hay varios)
     consolaLineas: [],                 // console.log e info de la página, el último arriba (no son errores)
     ronda: 0,                          // cuántas veces cargó la página el celular: separa los errores nuevos de los de antes de recargar

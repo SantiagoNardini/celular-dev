@@ -135,6 +135,20 @@ export class ChromeSimulado extends EventEmitter {
     return Buffer.from([0xff, 0xd8, 0xaa, 0xff, 0xd9]);
   }
   async tamano(medidas) { (this.tamanos ||= []).push(medidas); }
+  // condiciones de prueba y herramientas: se anota lo que se pide
+  async medios(m) { (this.mediosPedidos ||= []).push(m); }
+  async vision(tipo) { (this.visiones ||= []).push(tipo); }
+  async lugar(l) { (this.lugares ||= []).push(l); }
+  async cpu(veces) { (this.cpus ||= []).push(veces); }
+  async correr(funcion, dato) {
+    if (funcion.name === 'elementoEn') { this.inspeccionado = dato; return this.elemento ?? null; }
+    if (funcion.name === 'volcarAlmacenamiento') return this.almacen || { local: [], sesion: [], serviceWorkers: 0, caches: [], bases: [] };
+    (this.corridas ||= []).push(dato);
+    return undefined;
+  }
+  async cookies() { return this.cookiesDelSitio || []; }
+  async borrarCookie(nombre, dominio, ruta) { (this.cookiesBorradas ||= []).push([nombre, dominio, ruta]); }
+  async borrarDatos(origen) { (this.datosBorrados ||= []).push(origen); }
   async medidasPantalla() { return { ancho: 411, alto: 773 }; }
   async iniciarEspejo(opciones) { this.espejo = true; this.pedidosEspejo = [...(this.pedidosEspejo || []), opciones]; }
   detenerEspejo() { this.espejo = false; return Promise.resolve(); }

@@ -57,11 +57,20 @@ node celular-dev/bin/celular.mjs --carpeta celular-dev/ejemplo
 - **Errores en lenguaje simple.** Excepciones de JavaScript, pedidos fallidos, 404, contenido bloqueado, `console.warn`: agrupados, explicados, con archivo y línea. Los errores de después de recargar se marcan como *Nuevo*; los anteriores se atenúan.
 - **Un botón cuando algo falla.** Celular desconectado, servidor apagado, pestaña de Chrome cerrada: el panel dice qué pasó y ofrece un solo botón para arreglarlo.
 - **Informe para tu IA.** Un clic copia todos los errores en un formato con el que un asistente puede trabajar. Cada error también tiene su propio *Copiar para la IA*.
-- **Probar otras pantallas.** Simulá otros tamaños de pantalla, una red 3G lenta o sin conexión, y hacé una revisión rápida del sitio (desborde, botones chicos, contraste, imágenes sin texto alternativo…).
+- **Condiciones de prueba.** Tema oscuro o claro, animaciones reducidas, contraste alto, daltonismo y visión borrosa, otra zona horaria, idioma y ubicación, otros tamaños de pantalla, sin conexión, y un **celular lento** de un clic (red 3G y procesador 4 veces más despacio) para ver cómo anda tu sitio en un equipo de gama baja.
+- **Inspector.** Tocá cualquier elemento en el espejo: ves su selector, tamaño, colores, letra y espaciado, un aviso si es muy chico para tocarlo y un botón que lo copia para tu IA.
+- **Red.** Cada pedido que hace la página con su peso y tiempo, lo que más pesa (con un consejo si una imagen podría ser más liviana), lo que falla y *copiar como curl*.
+- **Datos del sitio.** Lo que tu sitio guardó en el celular (almacenamiento local, cookies, service workers) y *Empezar de cero*, que lo borra (solo de ese sitio) y recarga como en una primera visita.
+- **Revisión rápida del sitio.** Desborde, botones chicos, contraste, imágenes sin texto alternativo…
 - **Consola del celular.** La salida de `console.log` junto a los errores.
 - **Varios celulares.** Elegís cuál usar cuando hay más de uno conectado.
 - **Mantiene la pantalla prendida** mientras corre y deja todo como estaba al cerrar. No deja **nada abierto** de fondo.
 - **Windows, Mac y Linux**, en **español e inglés**, con tema claro y oscuro.
+
+<p align="center">
+  <img src="docs/img/inspector.png" alt="El inspector mostrando el elemento tocado en el espejo del celular, resaltado" width="49%">
+  <img src="docs/img/network.png" alt="La pestaña de red con cada pedido, su peso y su tiempo" width="49%">
+</p>
 
 ## Cómo funciona
 

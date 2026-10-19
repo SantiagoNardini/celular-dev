@@ -57,11 +57,20 @@ node celular-dev/bin/celular.mjs --carpeta celular-dev/ejemplo
 - **Errors in plain language.** JavaScript exceptions, failed requests, 404s, blocked content, `console.warn`: grouped, explained, with file and line. Errors after a reload are marked *New*; older ones fade.
 - **One button when something fails.** Phone unplugged, server down, Chrome tab closed: the panel says what happened and offers a single button to fix it.
 - **Report for your AI.** One click copies every error, in a format an assistant can act on. Each error also has its own *Copy for AI*.
-- **Test other screens.** Simulate other screen sizes, a slow 3G network or going offline, and run a quick site review (overflow, tiny tap targets, contrast, missing alt text…).
+- **Test conditions.** Dark or light theme, reduced animations, high contrast, color-blindness and blurred vision, another time zone, language and location, other screen sizes, going offline, and a one-click **slow phone** (3G network + a CPU 4× slower) to see how your site runs on a low-end device.
+- **Inspector.** Tap any element in the mirror: you get its selector, size, colors, font and spacing, a warning if it is too small to tap, and a button that copies it for your AI.
+- **Network.** Every request the page makes with its size and time, what weighs the most (with a hint when an image could be lighter), what fails, and *copy as curl*.
+- **Site data.** What your site saved on the phone — local storage, cookies, service workers — and *Start fresh*, which deletes it (for that site only) and reloads like a first visit.
+- **Quick site review.** Overflow, tiny tap targets, contrast, missing alt text…
 - **Phone console.** `console.log` output next to the errors.
 - **Several phones.** Pick which one to use when more than one is connected.
 - **Keeps the screen awake** while it runs, and puts everything back when it closes. Leaves **nothing running** in the background.
 - **Windows, Mac and Linux**, in **English and Spanish**, light and dark.
+
+<p align="center">
+  <img src="docs/img/inspector.png" alt="The inspector showing the element tapped on the phone's mirror, highlighted" width="49%">
+  <img src="docs/img/network.png" alt="The network tab listing each request with its size and time" width="49%">
+</p>
 
 ## How it works
 

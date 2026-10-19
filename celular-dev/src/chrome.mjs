@@ -168,6 +168,62 @@ export class Chrome extends EventEmitter {
     return Buffer.from(r.data, 'base64');
   }
 
+  // ---------- Condiciones de prueba (duran lo que dura la conexión: al reconectar se vuelven a pedir) ----------
+
+  // Cómo se ve la página según los ajustes del sistema: tema, animaciones y contraste. 'auto' / 'normal': los del celular.
+  medios({ esquema = 'auto', animaciones = 'normal', contraste = 'normal' } = {}) {
+    return this.enviar('Emulation.setEmulatedMedia', { features: [
+      { name: 'prefers-color-scheme', value: esquema === 'auto' ? '' : esquema },
+      { name: 'prefers-reduced-motion', value: animaciones === 'reducidas' ? 'reduce' : '' },
+      { name: 'prefers-contrast', value: contraste === 'alto' ? 'more' : '' }
+    ] });
+  }
+
+  // Cómo vería la página alguien con otra visión: blurredVision, protanopia, deuteranopia, tritanopia, achromatopsia, none.
+  vision(tipo) {
+    return this.enviar('Emulation.setEmulatedVisionDeficiency', { type: tipo || 'none' });
+  }
+
+  // Otro lugar: zona horaria, idioma y ubicación. Sin lugar, vuelve a lo real.
+  async lugar(lugar) {
+    // el idioma que ve la página (navigator.language y la cabecera Accept-Language) se cambia junto con el agente de usuario
+    // (el mismo de siempre: solo cambia el idioma); el formato de fechas y números, con el locale
+    this.agente ||= await this.evaluar('navigator.userAgent');
+    await this.enviar('Emulation.setUserAgentOverride', { userAgent: this.agente, acceptLanguage: lugar ? lugar.idioma : '' });
+    await this.enviar('Emulation.setLocaleOverride', { locale: lugar ? lugar.idioma : '' });
+    await this.enviar('Emulation.setTimezoneOverride', { timezoneId: lugar ? lugar.zona : '' });
+    if (lugar) await this.enviar('Emulation.setGeolocationOverride', { latitude: lugar.lat, longitude: lugar.lon, accuracy: 50 });
+    else await this.enviar('Emulation.clearGeolocationOverride');
+  }
+
+  // Un celular más lento: el procesador va `veces` veces más despacio (1: normal).
+  cpu(veces) {
+    return this.enviar('Emulation.setCPUThrottlingRate', { rate: veces });
+  }
+
+  // ---------- Inspeccionar y datos del sitio ----------
+
+  // Corre una función en la página con un dato y devuelve lo que devuelve (puede ser asincrónica).
+  async correr(funcion, dato) {
+    const r = await this.enviar('Runtime.evaluate', { expression: `(${funcion.toString()})(${JSON.stringify(dato === undefined ? null : dato)})`, returnByValue: true, awaitPromise: true });
+    if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception ? r.exceptionDetails.exception.description : r.exceptionDetails.text);
+    return r.result ? r.result.value : undefined;
+  }
+
+  cookies(url) {
+    return this.enviar('Network.getCookies', { urls: [url] }).then(r => r.cookies || []);
+  }
+
+  borrarCookie(nombre, dominio, ruta) {
+    return this.enviar('Network.deleteCookies', { name: nombre, domain: dominio, path: ruta });
+  }
+
+  // Borra todo lo que el sitio guardó en el celular (almacenamiento local, cookies, bases, caché y service workers de ese origen).
+  async borrarDatos(origen) {
+    await this.enviar('Storage.clearDataForOrigin', { origin: origen, storageTypes: 'all' });
+    await this.enviar('Network.clearBrowserCache').catch(() => {});   // la caché del navegador: si no se puede, lo importante ya se borró
+  }
+
   // Simula otra pantalla: la página se arma y responde con ese ancho y alto (medidas: { ancho, alto, densidad }).
   // Sin medidas, vuelve a la real. Dura lo que dura la conexión con la pestaña: al reconectar hay que volver a pedirla.
   tamano(medidas) {

@@ -6,6 +6,7 @@ import { reanudarEspejo } from './espejo.mjs';
 import { alCargar } from './frescura.mjs';
 import { mantenerDespierto } from './despierto.mjs';
 import { tamanoDe, paraChrome, listaParaPanel } from './tamanos.mjs';
+import { aplicarCondiciones } from './condiciones.mjs';
 
 const espera = ms => new Promise(r => setTimeout(r, ms));
 
@@ -26,6 +27,17 @@ function recordarPagina(app, url) {
   cambio(app);
 }
 
+// Los pedidos de red cambian muy seguido: al panel se le avisa como mucho cuatro veces por segundo.
+function programarPedidos(app) {
+  if (app.relojes.pedidos) return;
+  app.relojes.pedidos = setTimeout(() => {
+    app.relojes.pedidos = null;
+    if (app.interno.cerrando) return;
+    app.estado.pedidos = app.pedidos.resumen(app.sitio ? app.sitio.origen : '');
+    cambio(app);
+  }, 250);
+}
+
 // Busca la pestaña del sitio (esperando un poco si se acaba de abrir) y se conecta a su consola.
 export async function conectarConsola(app, intentos = 20) {
   const { estado, chrome } = app;
@@ -44,6 +56,7 @@ export async function conectarConsola(app, intentos = 20) {
         if (estado.red !== 'normal') await chrome.red(estado.red).catch(() => {});
         const simulado = tamanoDe(estado.tamano);
         if (simulado) await chrome.tamano(paraChrome(simulado)).catch(() => {});
+        await aplicarCondiciones(app).catch(() => {});
         cambio(app);
         reanudarEspejo(app);
         return true;
@@ -126,7 +139,10 @@ export function escucharChrome(app, alCuadro) {
   const { chrome } = app;
   chrome.on('evento', (metodo, params) => {
     // la página que tiene abierta el celular: cambia al navegar, y también al cambiar el # o con pushState
+    if (app.pedidos.evento(metodo, params)) programarPedidos(app);
     if (metodo === 'Page.frameNavigated' && params.frame && !params.frame.parentId) {
+      app.pedidos.marcoPrincipal(params.frame.id);
+      app.estado.inspeccion = null;   // el elemento que se había tocado ya no está donde estaba
       app.estado.ronda++;   // la página cargó de nuevo: lo que falle desde acá es nuevo
       recordarPagina(app, params.frame.url + (params.frame.urlFragment || ''));
       cambio(app);
