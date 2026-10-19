@@ -4,6 +4,7 @@
 // de la PC (se abre solo) o desde la terminal; los dos muestran lo mismo.
 // Acá solo se leen las opciones y se arranca: el programa está en src/app.
 import { parseArgs } from 'node:util';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { elegirIdioma, t } from '../src/idioma.mjs';
 import { preferencia, carpetaDatos, rutaParaMostrar } from '../src/lugares.mjs';
@@ -30,6 +31,14 @@ try {
 elegirIdioma(opciones.idioma || process.env.CELULAR_IDIOMA || preferencia('idioma'));
 if (opciones.ayuda) { console.log(t('ayuda', { puertos: PUERTOS_CONOCIDOS.join(', ') })); process.exit(0); }
 
+// opciones que no pueden andar: se avisa y se sale, en vez de quedar esperando algo que nunca va a aparecer
+const puerto = opciones.puerto;
+const problema = (puerto !== undefined && !(/^\d+$/.test(puerto) && +puerto >= 1 && +puerto <= 65535)) ? t('opcion.puertoMal', { valor: puerto })
+  : (opciones.carpeta && !existsSync(opciones.carpeta)) ? t('opcion.carpetaNoExiste', { valor: opciones.carpeta })
+  : (opciones.codigo && !existsSync(opciones.codigo)) ? t('opcion.carpetaNoExiste', { valor: opciones.codigo })
+  : (opciones.idioma && !['es', 'en'].includes(opciones.idioma)) ? t('opcion.idiomaMal', { valor: opciones.idioma }) : null;
+if (problema) { console.log(problema); process.exit(1); }
+
 const app = crearApp({ opciones });
 
 process.on('SIGINT', () => app.salir(0));
@@ -40,6 +49,12 @@ process.on('uncaughtException', error => {
   ui.falla(t('error.algoSalioMal', { detalle: error.message }), [t('error.cerraYAbri'), t('error.mandaRegistro', { ruta: rutaParaMostrar(join(carpetaDatos(), 'registro.log')) })]);
   ui.anotar('ERROR', error.stack || String(error));
   app.salir(1);
+});
+
+// una promesa rechazada que nadie atendió no tumba el programa: se anota y se sigue (la salida es solo para lo grave)
+process.on('unhandledRejection', error => {
+  ui.falla(t('error.algoSalioMal', { detalle: error && error.message ? error.message : String(error) }));
+  ui.anotar('ERROR', (error && error.stack) || String(error));
 });
 
 escucharTeclas(app);

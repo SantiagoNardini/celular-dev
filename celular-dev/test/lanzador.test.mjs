@@ -81,3 +81,14 @@ test('abrir una dirección en Windows no pasa por cmd.exe (un & en la dirección
   assert.equal(direccionSegura('calc'), null);
   assert.equal(direccionSegura('https://example.com/a b'), 'https://example.com/a%20b');
 });
+
+test('opciones que no pueden andar (puerto raro, carpeta que no existe) avisan y salen, en vez de quedar esperando', () => {
+  const celular = join(raiz, 'celular-dev', 'bin', 'celular.mjs');
+  const correr = (...args) => spawnSync(process.execPath, [celular, '--idioma', 'es', ...args], { encoding: 'utf8', timeout: 15000 });
+  for (const [args, texto] of [[['--puerto', 'abc'], /puerto «abc» no sirve/], [['--puerto', '70000'], /puerto «70000»/], [['--carpeta', join(raiz, 'no-existe-esta-carpeta')], /no existe/], [['--codigo', join(raiz, 'tampoco')], /no existe/]]) {
+    const r = correr(...args);
+    assert.equal(r.status, 1, args.join(' '));
+    assert.match(r.stdout, texto);
+  }
+  assert.equal(correr('--ayuda').status, 0);
+});
