@@ -142,8 +142,8 @@ Arma los paquetes de Windows, Mac (chip Apple e Intel) y Linux en `../paquete`, 
 Para publicar una versión en GitHub: cambiá `version` en `package.json`, subí el cambio y después la etiqueta. GitHub corre las pruebas, arma los paquetes y los publica en Releases (`.github/workflows/version.yml`):
 
 ```bash
-git tag v0.4.0
-git push origin v0.4.0
+git tag v0.5.0
+git push origin v0.5.0
 ```
 
 `.gitattributes` y `.editorconfig` (al lado de esta carpeta) hacen que git y los editores guarden siempre `celular-dev.bat` con saltos de línea de Windows, y `celular-dev.sh` y `celular-dev.command` con los de Linux: al revés, el doble clic falla.
