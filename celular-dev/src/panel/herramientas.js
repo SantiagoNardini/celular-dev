@@ -16,8 +16,10 @@ const bytesLegibles = n => n == null ? '…' : n < 1024 ? `${n} B` : n < 1048576
 // ---------- Cuadro con pestañas ----------
 
 function vistaHerramientas(s) {
+  if (herramienta === 'servidor' && !s.servidorPropio) herramienta = 'condiciones';   // el servidor ya no está
   const pestanas = [['condiciones', tr('herr.condiciones')], ['inspector', tr('herr.inspector')], ['red', `${tr('herr.red')}${s.pedidos.total ? ` <span class="cuenta">${s.pedidos.total}</span>` : ''}`], ['datos', tr('herr.datos')]];
-  const cuerpo = herramienta === 'condiciones' ? vistaCondiciones(s) : herramienta === 'inspector' ? vistaInspector(s) : herramienta === 'red' ? vistaPedidos(s) : vistaDatos(s);
+  if (s.servidorPropio) pestanas.push(['servidor', `${tr('herr.servidor')}`]);
+  const cuerpo = herramienta === 'condiciones' ? vistaCondiciones(s) : herramienta === 'inspector' ? vistaInspector(s) : herramienta === 'red' ? vistaPedidos(s) : herramienta === 'servidor' ? vistaServidor(s) : vistaDatos(s);
   return `<div class="pestanas" role="tablist">${pestanas.map(([id, nombre]) =>
     `<button role="tab" aria-selected="${herramienta === id}" class="${herramienta === id ? 'activa' : ''}" data-accion="herramienta" data-valor="${id}">${nombre}</button>`).join('')}</div>
     <div class="cuerpo-herramienta" role="tabpanel">${cuerpo}</div>`;
@@ -158,6 +160,15 @@ function vistaPedidos(s) {
         <button class="copiar-curl" data-accion="copiar-curl" data-valor="${esc(x.id)}" title="${tr('red.copiarCurl')}" aria-label="${tr('red.copiarCurl')}">${ic('copiar')}</button></div>
         ${x.fallo ? `<p class="consejo mal">${esc(x.fallo)}</p>` : ''}${consejo ? `<p class="consejo">${consejo}</p>` : ''}</div>`;
   }).join('')}</div>`;
+}
+
+// ---------- El servidor que prendió celular-dev ----------
+
+function vistaServidor(s) {
+  const v = s.servidorPropio;
+  return `<p class="nota">${tr(v.cerrado ? 'servidor.cerrado' : 'servidor.ayuda', { comando: v.texto, puerto: v.puerto })}</p>
+    <pre class="salida-servidor grande">${v.lineas.length ? v.lineas.map(esc).join('\n') : tr('servidor.vacio')}</pre>
+    ${v.cerrado ? '' : `<p class="reiniciar"><button class="chico peligro" data-accion="servidor-apagar">${tr('servidor.apagar')}</button></p>`}`;
 }
 
 // ---------- Datos del sitio ----------

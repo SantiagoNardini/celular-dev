@@ -19,8 +19,11 @@ export function estadoInicial({ carpetaProyecto, esProyecto, manual }) {
     opciones: {
       carpeta: { nombre: basename(carpetaProyecto), ruta: carpetaProyecto, tieneSitio: esProyecto && tieneSitio(carpetaProyecto) },
       recientes: [],                   // carpetas usadas otras veces: { nombre, ruta }
-      servidores: []
+      servidores: [],
+      proyecto: null                   // si la carpeta es un proyecto, la oferta de prender su servidor: { nombre, marco, texto, faltaInstalar, recordado }
     },
+    arranque: null,                    // prendiendo el servidor del proyecto: { fase: 'iniciando' | 'error', texto, lineas, error }
+    servidorPropio: null,              // el servidor que prendió celular-dev: { texto, puerto, lineas, cerrado }
     sitio: null,                       // { tipo, nombre, url }
     necesitaCodigo: false,             // un servidor sin carpeta de código conocida: no se puede recargar al guardar
     descargaAdb: null,                 // null, o el porcentaje mientras se descarga ADB, o 'error'

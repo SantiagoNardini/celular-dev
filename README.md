@@ -43,6 +43,14 @@ npx github:SantiagoNardini/celular-dev
 
 On the phone you need **USB debugging** turned on (the panel walks you through it, step by step, with animations) and **Google Chrome**. ADB downloads itself with one click if you don't have it.
 
+**From inside your project** (starts its dev server for you, and stops it when you close):
+
+```bash
+npx github:SantiagoNardini/celular-dev --iniciar
+```
+
+Without `--iniciar` nothing is started: the panel just offers it, and you choose.
+
 **Try it with the example site** (two buttons that fail on purpose, so you can see the errors explained):
 
 ```bash
@@ -52,6 +60,7 @@ node celular-dev/bin/celular.mjs --carpeta celular-dev/ejemplo
 
 ## What it does
 
+- **Starts your dev server — only if you ask.** Open celular-dev inside a project (Vite, Next, Astro, Angular…) and the panel offers to run its `npm run dev` for you: *Start the server*, *Always for this project*, *Not now* or *Do not ask again*. It shows the command first, never runs anything on its own, shows the server's output, and stops it when you close celular-dev. From the terminal: `--iniciar`.
 - **Live mirror, touchable.** The phone's screen in the panel: tap, swipe, scroll with the mouse wheel and type with your keyboard. A change shows up in about 90 ms, and a sharp full-resolution image arrives when the screen rests.
 - **Reload on save.** Works with a plain folder (no server needed) or with the server you already run: Live Server, Vite, `npm run dev`…
 - **Errors in plain language.** JavaScript exceptions, failed requests, 404s, blocked content, `console.warn`: grouped, explained, with file and line. Errors after a reload are marked *New*; older ones fade.

@@ -43,6 +43,14 @@ npx github:SantiagoNardini/celular-dev
 
 En el celular hace falta la **depuración USB** activada (el panel te guía paso a paso, con animaciones) y **Google Chrome**. ADB se descarga solo con un clic si no lo tenés.
 
+**Desde tu proyecto** (prende su servidor de desarrollo y lo apaga al cerrar):
+
+```bash
+npx github:SantiagoNardini/celular-dev --iniciar
+```
+
+Sin `--iniciar` no se prende nada: el panel solo te lo ofrece y vos elegís.
+
 **Probalo con el sitio de ejemplo** (dos botones que fallan a propósito, para ver los errores explicados):
 
 ```bash
@@ -52,6 +60,7 @@ node celular-dev/bin/celular.mjs --carpeta celular-dev/ejemplo
 
 ## Qué hace
 
+- **Prende tu servidor de desarrollo — solo si lo pedís.** Abrí celular-dev dentro de un proyecto (Vite, Next, Astro, Angular…) y el panel te ofrece correr su `npm run dev`: *Prender el servidor*, *Siempre para este proyecto*, *Ahora no* o *No preguntar más*. Muestra el comando antes, no ejecuta nada por su cuenta, muestra lo que imprime el servidor y lo apaga cuando cerrás celular-dev. Desde la terminal: `--iniciar`.
 - **Espejo en vivo que se puede tocar.** La pantalla del celular en el panel: tocá, deslizá, usá la rueda del mouse y escribí con tu teclado. Un cambio se ve en unos 90 ms, y cuando la pantalla se queda quieta llega una imagen nítida a resolución completa.
 - **Recarga al guardar.** Con una carpeta común (sin servidor) o con el servidor que ya uses: Live Server, Vite, `npm run dev`…
 - **Errores en lenguaje simple.** Excepciones de JavaScript, pedidos fallidos, 404, contenido bloqueado, `console.warn`: agrupados, explicados, con archivo y línea. Los errores de después de recargar se marcan como *Nuevo*; los anteriores se atenúan.

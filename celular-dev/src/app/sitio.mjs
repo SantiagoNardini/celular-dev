@@ -9,13 +9,14 @@ import { leerConfig, recordarCarpeta, codigoRecordado, rutaParaMostrar } from '.
 import { cambio, contar } from './estado.mjs';
 import { recargar } from './acciones.mjs';
 import { marcarManual, esperarCargaSiCorresponde } from './frescura.mjs';
+import { sugerencia, iniciarSiCorresponde } from './arranque.mjs';
 
 const espera = ms => new Promise(r => setTimeout(r, ms));
 
 // Con un servidor, la carpeta del código (la que se vigila para recargar al guardar) sale de: --codigo,
 // lo recordado para ese puerto, o la carpeta desde donde se abrió si es un proyecto. Si no, se pregunta.
 export function sitioDeServidor(app, s) {
-  const carpeta = app.opciones.codigo ? resolve(app.opciones.codigo) : codigoRecordado(s.puerto) || (app.esProyecto ? app.carpetaProyecto : null);
+  const carpeta = s.carpeta || (app.opciones.codigo ? resolve(app.opciones.codigo) : codigoRecordado(s.puerto) || (app.esProyecto ? app.carpetaProyecto : null));
   return { tipo: 'servidor', puerto: s.puerto, ruta: s.ruta, liveServer: s.liveServer, nombre: `localhost:${s.puerto}${s.ruta === '/' ? '' : s.ruta}`, carpeta };
 }
 
@@ -78,9 +79,11 @@ async function actualizarOpciones(app) {
   const cambioCarpeta = tiene !== estado.opciones.carpeta.tieneSitio;
   estado.opciones.carpeta.tieneSitio = tiene;
   const usadas = recientes(app);
-  if (cambioCarpeta || JSON.stringify([servidores, usadas]) !== JSON.stringify([estado.opciones.servidores, estado.opciones.recientes])) {
+  const oferta = sugerencia(app, servidores);
+  if (cambioCarpeta || JSON.stringify([servidores, usadas, oferta]) !== JSON.stringify([estado.opciones.servidores, estado.opciones.recientes, estado.opciones.proyecto])) {
     estado.opciones.servidores = servidores;
     estado.opciones.recientes = usadas;
+    estado.opciones.proyecto = oferta;
     cambio(app);
   }
 }
@@ -114,6 +117,11 @@ export async function obtenerSitio(app) {
   const { opciones, deps } = app;
   const conocidos = deps.servidores.conocidos;
   if (opciones.carpeta) return sitioDeCarpeta(app, resolve(opciones.carpeta));
+  // --iniciar, o «siempre» para este proyecto: se prende su servidor sin pasar por el inicio
+  if (!opciones.puerto && !opciones.ruta) {
+    const prendido = await iniciarSiCorresponde(app);
+    if (prendido) return prendido;
+  }
   if (opciones.puerto || opciones.ruta || !app.conPanel) {
     const pedido = { puerto: opciones.puerto ? parseInt(opciones.puerto, 10) : 0, ruta: opciones.ruta || '' };
     let hallado = await deps.servidores.detectar(pedido);

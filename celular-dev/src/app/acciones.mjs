@@ -18,6 +18,7 @@ import { tamanoDe, paraChrome, cabe } from './tamanos.mjs';
 import { limpiarSoltada } from '../buscar-carpeta.mjs';
 import { ocultarNovedad } from './novedad.mjs';
 import { armarDiagnostico } from './diagnostico.mjs';
+import { prenderProyecto, apagarServidorPropio, guardarDecision, sitioDelServidor } from './arranque.mjs';
 import { elegirCondicion, reiniciarCondiciones, celularLento, inspeccionar, cerrarInspeccion, leerDatos, borrarDato, empezarDeCero } from './herramientas.mjs';
 
 const sello = (ui, d) => `${ui.fecha(d)}_${ui.hora(d).replace(/:/g, '-')}`;
@@ -222,6 +223,31 @@ async function arreglar(app) {
   return { mensaje: t('arreglar.nada') };
 }
 
+// «Prender el servidor» del panel: con el servidor andando, se lo elige como sitio (como si se hubiera elegido de la lista).
+async function iniciarProyectoDesdePanel(app, recordar) {
+  if (!app.alElegirSitio) return { error: t('sitio.noSeEstaEligiendo') };
+  if (app.arrancando) return { mensaje: t('proyecto.yaArrancando') };
+  (async () => {
+    const r = await prenderProyecto(app, recordar);
+    if (!r) return;
+    if (!app.alElegirSitio) { await apagarServidorPropio(app); return; }   // mientras tanto se eligió otra cosa
+    await elegir(app, async () => sitioDelServidor(app, r));
+  })().catch(error => contar(app, 'error', t('proyecto.noPrendio', { texto: error.message })));
+  return {};
+}
+
+// «Ahora no» (hasta que se vuelva a abrir) o «No preguntar más» para este proyecto.
+function ocultarProyecto(app, parasiempre) {
+  const { estado } = app;
+  if (parasiempre) {
+    const p = app.deps.detectarProyecto(app.carpetaProyecto);
+    if (p) guardarDecision(p, 'no');
+  } else app.interno.proyectoOculto = true;
+  estado.opciones.proyecto = null;
+  cambio(app);
+  return { mensaje: t(parasiempre ? 'proyecto.noPreguntoMas' : 'proyecto.ahoraNo') };
+}
+
 function cambiarIdioma(app, valor) {
   const nuevo = elegirIdioma(valor);
   guardarPreferencia('idioma', nuevo);
@@ -342,6 +368,17 @@ export async function alAccion(app, accion, valor) {
       return {};
     case 'idioma': return cambiarIdioma(app, valor);
     case 'arreglar': return arreglar(app);
+    case 'proyecto-iniciar': return iniciarProyectoDesdePanel(app, valor === 'siempre');
+    case 'proyecto-ocultar': return ocultarProyecto(app, valor === 'nunca');
+    case 'proyecto-cancelar':
+      if (app.arrancando) app.arrancando.abort();
+      estado.arranque = null; cambio(app);
+      return {};
+    case 'servidor-apagar': {
+      const apagado = await apagarServidorPropio(app);
+      if (apagado) contar(app, 'info', t('proyecto.apagado'));
+      return apagado ? { mensaje: t('proyecto.apagado') } : { error: t('proyecto.nadaQueApagar') };
+    }
     case 'elegir-celular': {
       if (!app.adb || !app.adb.elegir(String(valor))) return { error: t('accion.celularYaNo') };
       return { mensaje: t('accion.celularElegido') };

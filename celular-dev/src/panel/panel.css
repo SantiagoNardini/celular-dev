@@ -359,3 +359,18 @@ button.peligro { color: var(--peligro); border-color: var(--peligro); }
 .dato .valor { color: var(--texto-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: ui-monospace, "Cascadia Code", Consolas, monospace; }
 @media (max-width: 760px) { .fila-cond { grid-template-columns: 1fr; } .fila-cond .nota { grid-column: 1; } .linea-pedido { grid-template-columns: 34px minmax(0, 1fr) 60px 24px; } .linea-pedido .metodo, .linea-pedido .tipo, .linea-pedido .tiempo { display: none; } .consejo { margin-left: 0; } }
 body.compacto [data-zona="herramientas"] { display: none; }
+
+/* oferta de prender el servidor del proyecto */
+.tarjeta.proyecto { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; }
+.tarjeta.proyecto > .icono { flex: none; }
+.tarjeta.proyecto .cuerpo-proyecto { flex: 1; min-width: 260px; }
+.tarjeta.proyecto h2 { margin: 0 0 4px; }
+.tarjeta.proyecto .sub { margin: 0 0 10px; }
+.tarjeta.proyecto .botones { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.tarjeta.proyecto.mal { border-color: var(--peligro); display: block; }
+.cabeza-proyecto { display: flex; align-items: center; gap: 14px; width: 100%; }
+.cabeza-proyecto > div { flex: 1; }
+.cabeza-proyecto h2 { margin: 0; font-size: 1rem; }
+.salida-servidor { margin: 10px 0 0; padding: 10px 12px; width: 100%; max-height: 190px; overflow: auto; background: var(--suave); border-radius: 8px; font: 0.75rem/1.5 ui-monospace, "Cascadia Code", Consolas, monospace; color: var(--texto-2); white-space: pre-wrap; overflow-wrap: anywhere; }
+.salida-servidor:empty { display: none; }
+.salida-servidor.grande { max-height: 320px; }

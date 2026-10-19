@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { createServer, request } from 'node:http';
 import { AdbSimulado, ChromeSimulado, uiCallada, hasta } from './simulados.mjs';
 import { puertoAbierto, detectar } from '../src/servidor.mjs';
+import { detectarProyecto as detectarReal } from '../src/proyecto.mjs';
 
 // un puerto propio para el panel y una carpeta de datos de prueba: así no se toca una copia abierta
 // de celular-dev ni lo que recuerda la de verdad
@@ -37,14 +38,14 @@ afterEach(async () => {
 });
 
 // Arma celular-dev con el celular simulado. Devuelve todo para mirar y tocar.
-function armar({ opciones = {}, deps = {} } = {}) {
+function armar({ opciones = {}, deps = {}, cwd = temporal } = {}) {
   const adb = new AdbSimulado();
   const piezas = { adb, chrome: null, terminado: null, codigo: null };
   piezas.terminado = new Promise(resolver => {
     piezas.app = crearApp({
       opciones,
       ui: uiCallada,
-      cwd: temporal,
+      cwd,
       tiempos: { opciones: 50, servidor: 60, reintento: 50, pestana: 10, adb: 30, chrome: 30, nitido: 40, frescuraVivo: 120, frescuraLive: 120 },
       deps: {
         buscarAdb: () => 'adb-simulado',
@@ -1027,4 +1028,215 @@ test('una condición que Chrome no acepta no impide aplicar las demás, y los no
   assert.equal(p.estado.condiciones.lugar, 'real', 'lo que no se aceptó no queda marcado');
   await p.app.salir(0);
   await p.terminado;
+});
+
+// ---------- Prender el servidor del proyecto (opcional) ----------
+
+// Un proyecto de mentira (con package.json) y un servidor de mentira para «prender»: lo único que no es de verdad es
+// el proceso (iniciarProyecto se reemplaza); el panel, las preferencias y el resto del programa sí.
+let proyectosCreados = 0;
+function proyectoDePrueba(scripts = { dev: 'vite' }) {
+  const carpeta = join(temporal, `proyecto-${++proyectosCreados}`);
+  mkdirSync(carpeta, { recursive: true });
+  writeFileSync(join(carpeta, 'package.json'), JSON.stringify({ name: `proyecto-${proyectosCreados}`, scripts, devDependencies: { vite: '5' } }));
+  mkdirSync(join(carpeta, 'node_modules'));
+  return carpeta;
+}
+async function servidorDePrueba() {
+  const s = createServer((_, r) => r.end('<h1>proyecto</h1>'));
+  await new Promise(r => s.listen(0, '127.0.0.1', r));
+  return s;
+}
+function iniciarFalso(servidor, modo = 'bien') {
+  const registro = { llamadas: 0, apagados: 0, alCerrar: null };
+  const fn = async (proyecto, { alLinea, alCerrar, senal }) => {
+    registro.llamadas++;
+    registro.alCerrar = alCerrar;
+    alLinea('VITE v5 ready');
+    if (modo === 'error') throw Object.assign(new Error('x'), { tipo: 'salio', codigo: 1, lineas: ['Error: falta una cosa'] });
+    if (modo === 'colgar') await new Promise((_, no) => senal.addEventListener('abort', () => no(Object.assign(new Error('c'), { tipo: 'cancelado' })), { once: true }));
+    return { puerto: servidor.address().port, detener: async () => { registro.apagados++; } };
+  };
+  return { fn, registro };
+}
+
+test('con un proyecto, el panel ofrece prender el servidor (sin prenderlo), y al aceptar lo prende, lo muestra y lo apaga al cerrar', async () => {
+  const carpeta = proyectoDePrueba();
+  const servidor = await servidorDePrueba();
+  const { fn, registro } = iniciarFalso(servidor);
+  const p = armar({ cwd: carpeta, deps: { iniciarProyecto: fn } });
+  p.app.arrancar();
+  await hasta(() => p.estado.fase === 'inicio', { que: 'el inicio' });
+  await hasta(() => p.estado.opciones.proyecto, { que: 'la oferta' });
+  assert.deepEqual([p.estado.opciones.proyecto.marco, p.estado.opciones.proyecto.texto, p.estado.opciones.proyecto.faltaInstalar], ['vite', 'npm run dev', false]);
+  await new Promise(r => setTimeout(r, 200));
+  assert.equal(registro.llamadas, 0, 'no se prende nada sin que se pida');
+
+  await accion('proyecto-iniciar', 'una');
+  await hasta(() => p.estado.fase === 'preparando', { que: 'seguir con el servidor prendido' });
+  assert.equal(registro.llamadas, 1);
+  assert.equal(p.app.sitio.puerto, servidor.address().port);
+  assert.equal(p.app.sitio.carpeta, carpeta, 'se vigila el código del proyecto para recargar al guardar');
+  assert.equal(p.estado.necesitaCodigo, false);
+  assert.deepEqual([p.estado.servidorPropio.texto, p.estado.servidorPropio.cerrado], ['npm run dev', false]);
+  assert.ok(p.estado.servidorPropio.lineas.includes('VITE v5 ready'));
+  assert.equal(p.estado.arranque, null);
+
+  await p.app.salir(0);
+  await p.terminado;
+  assert.equal(registro.apagados, 1, 'el servidor que prendió celular-dev se apaga con él');
+  servidor.close();
+});
+
+test('«ahora no» la esconde, «no preguntar más» la apaga para ese proyecto, y «siempre» lo prende solo la próxima vez', async () => {
+  const servidor = await servidorDePrueba();
+  // ahora no: se esconde hasta que se vuelve a abrir
+  const a = proyectoDePrueba();
+  let p = armar({ cwd: a, deps: { iniciarProyecto: iniciarFalso(servidor).fn } });
+  p.app.arrancar();
+  await hasta(() => p.estado.opciones.proyecto, { que: 'la oferta' });
+  assert.match((await accion('proyecto-ocultar', 'ahora')).mensaje, /no lo prendo/);
+  assert.equal(p.estado.opciones.proyecto, null);
+  await new Promise(r => setTimeout(r, 200));
+  assert.equal(p.estado.opciones.proyecto, null, 'no vuelve a aparecer en la misma vez');
+  await p.app.salir(0); await p.terminado;
+  p = armar({ cwd: a, deps: { iniciarProyecto: iniciarFalso(servidor).fn } });
+  p.app.arrancar();
+  await hasta(() => p.estado.opciones.proyecto, { que: 'la oferta otra vez, en otra apertura' });
+  // no preguntar más: se recuerda
+  assert.match((await accion('proyecto-ocultar', 'nunca')).mensaje, /no te vuelvo a preguntar/);
+  await p.app.salir(0); await p.terminado;
+  p = armar({ cwd: a, deps: { iniciarProyecto: iniciarFalso(servidor).fn } });
+  p.app.arrancar();
+  await hasta(() => p.estado.fase === 'inicio', { que: 'el inicio' });
+  await new Promise(r => setTimeout(r, 250));
+  assert.equal(p.estado.opciones.proyecto, null, 'no se vuelve a ofrecer para ese proyecto');
+  await p.app.salir(0); await p.terminado;
+
+  // siempre: la próxima vez arranca solo, sin pasar por el inicio
+  const b = proyectoDePrueba();
+  const primero = iniciarFalso(servidor);
+  p = armar({ cwd: b, deps: { iniciarProyecto: primero.fn } });
+  p.app.arrancar();
+  await hasta(() => p.estado.opciones.proyecto, { que: 'la oferta' });
+  await accion('proyecto-iniciar', 'siempre');
+  await hasta(() => p.estado.fase === 'preparando');
+  await p.app.salir(0); await p.terminado;
+  const segundo = iniciarFalso(servidor);
+  p = armar({ cwd: b, deps: { iniciarProyecto: segundo.fn } });
+  p.app.arrancar();
+  await hasta(() => p.estado.fase === 'preparando', { que: 'arrancar solo, sin preguntar' });
+  assert.equal(segundo.registro.llamadas, 1);
+  assert.equal(p.estado.necesitaCodigo, false);
+  await p.app.salir(0); await p.terminado;
+  assert.equal(segundo.registro.apagados, 1);
+  // pero si el comando cambió (otro script), vuelve a preguntar: lo que se aceptó era otra cosa
+  writeFileSync(join(b, 'package.json'), JSON.stringify({ name: 'b', scripts: { start: 'node otra-cosa.js' } }));
+  const tercero = iniciarFalso(servidor);
+  p = armar({ cwd: b, deps: { iniciarProyecto: tercero.fn } });
+  p.app.arrancar();
+  await hasta(() => p.estado.opciones.proyecto, { que: 'preguntar de nuevo por el comando nuevo' });
+  assert.equal(p.estado.opciones.proyecto.texto, 'npm run start');
+  assert.equal(tercero.registro.llamadas, 0);
+  await p.app.salir(0); await p.terminado;
+  servidor.close();
+});
+
+test('si el servidor no arranca se muestra por qué y se puede reintentar o cancelar; cancelar mientras arranca lo corta', async () => {
+  const carpeta = proyectoDePrueba();
+  const servidor = await servidorDePrueba();
+  let modo = 'error';
+  const registro = { llamadas: 0 };
+  const fn = (...args) => { registro.llamadas++; return iniciarFalso(servidor, modo).fn(...args); };
+  const p = armar({ cwd: carpeta, deps: { iniciarProyecto: fn } });
+  p.app.arrancar();
+  await hasta(() => p.estado.opciones.proyecto, { que: 'la oferta' });
+  await accion('proyecto-iniciar', 'una');
+  await hasta(() => p.estado.arranque && p.estado.arranque.fase === 'error', { que: 'el error' });
+  assert.match(p.estado.arranque.error, /se cerró al arrancar/);
+  assert.deepEqual(p.estado.arranque.lineas, ['Error: falta una cosa']);
+  assert.equal(p.estado.fase, 'inicio', 'sigue en el inicio: se puede elegir otra cosa');
+  // sin dependencias instaladas, el error lo dice
+  rmSync(join(carpeta, 'node_modules'), { recursive: true });
+  await accion('proyecto-iniciar', 'una');
+  await hasta(() => p.estado.arranque && /install/.test(p.estado.arranque.error), { que: 'el aviso de instalar' });
+  mkdirSync(join(carpeta, 'node_modules'));
+  // cancelar mientras arranca
+  modo = 'colgar';
+  await accion('proyecto-iniciar', 'una');
+  await hasta(() => p.estado.arranque && p.estado.arranque.fase === 'iniciando', { que: 'el arranque' });
+  assert.match((await accion('proyecto-iniciar', 'una')).mensaje, /Ya se está prendiendo/);
+  await accion('proyecto-cancelar');
+  await hasta(() => p.estado.arranque === null, { que: 'cancelar' });
+  assert.equal(p.estado.fase, 'inicio');
+  // y ahora sí anda
+  modo = 'bien';
+  await accion('proyecto-iniciar', 'una');
+  await hasta(() => p.estado.fase === 'preparando', { que: 'prender bien' });
+  await p.app.salir(0); await p.terminado;
+  servidor.close();
+});
+
+test('--iniciar prende el servidor sin pasar por el inicio; si ya hay uno prendido lo usa sin tocarlo; sin proyecto avisa', async () => {
+  const carpeta = proyectoDePrueba();
+  const servidor = await servidorDePrueba();
+  const { fn, registro } = iniciarFalso(servidor);
+  let p = armar({ cwd: carpeta, opciones: { iniciar: true }, deps: { iniciarProyecto: fn } });
+  p.app.arrancar();
+  await hasta(() => p.estado.fase === 'preparando', { que: 'arrancar sin preguntar' });
+  assert.equal(registro.llamadas, 1);
+  await p.app.salir(0); await p.terminado;
+  assert.equal(registro.apagados, 1);
+
+  // ya hay un servidor en el puerto del proyecto: se usa, sin prender otro ni apagarlo al salir
+  const otro = iniciarFalso(servidor);
+  const puerto = servidor.address().port;
+  p = armar({ cwd: carpeta, opciones: { iniciar: true }, deps: { iniciarProyecto: otro.fn, detectarProyecto: c => ({ ...detectarReal(c), puertoProbable: puerto }), servidores: { conocidos: [], puertoAbierto, detectar: async ({ puerto: pp } = {}) => (pp === puerto ? { puerto, ruta: '/', liveServer: false } : null) } } });
+  p.app.arrancar();
+  await hasta(() => p.estado.fase === 'preparando', { que: 'usar el que ya está' });
+  assert.equal(otro.registro.llamadas, 0);
+  assert.equal(p.estado.servidorPropio, null);
+  await p.app.salir(0); await p.terminado;
+  assert.equal(otro.registro.apagados, 0, 'un servidor que no prendió celular-dev no se apaga');
+
+  // sin proyecto: avisa y sale con error
+  p = armar({ cwd: temporal, opciones: { iniciar: true }, deps: { iniciarProyecto: fn } });
+  // como hace bin/celular.mjs: un error al arrancar muestra el mensaje y sale con 1
+  let mensaje = '';
+  p.app.arrancar().catch(error => { mensaje = error.message; return p.app.salir(1); });
+  await hasta(() => p.codigo === 1, { que: 'salir con error' });
+  assert.match(mensaje, /no parece un proyecto/);
+  servidor.close();
+});
+
+test('si el servidor que prendió celular-dev se cierra solo se avisa, y «Apagar el servidor» lo apaga', async () => {
+  const carpeta = proyectoDePrueba();
+  const servidor = await servidorDePrueba();
+  const { fn, registro } = iniciarFalso(servidor);
+  const p = armar({ cwd: carpeta, deps: { iniciarProyecto: fn } });
+  p.app.arrancar();
+  await hasta(() => p.estado.opciones.proyecto, { que: 'la oferta' });
+  await accion('proyecto-iniciar', 'una');
+  await hasta(() => p.estado.fase === 'preparando');
+  p.adb.cambiar('device');
+  await hasta(() => p.estado.fase === 'corriendo');
+  assert.match((await accion('servidor-apagar')).mensaje, /apagado/);
+  assert.equal(registro.apagados, 1);
+  assert.equal(p.estado.servidorPropio, null);
+  assert.match((await accion('servidor-apagar')).error, /ningún servidor/);
+  await p.app.salir(0); await p.terminado;
+  assert.equal(registro.apagados, 1, 'no se apaga dos veces');
+
+  // se cierra solo
+  const dos = iniciarFalso(servidor);
+  const q = armar({ cwd: carpeta, opciones: { iniciar: true }, deps: { iniciarProyecto: dos.fn } });
+  q.app.arrancar();
+  await hasta(() => q.estado.fase === 'preparando');
+  q.adb.cambiar('device');
+  await hasta(() => q.estado.fase === 'corriendo');
+  dos.registro.alCerrar(3);
+  await hasta(() => q.estado.servidorPropio && q.estado.servidorPropio.cerrado, { que: 'avisar que se cerró' });
+  assert.match(actividad(q.estado), /se cerró solo \(código 3\)/);
+  await q.app.salir(0); await q.terminado;
+  servidor.close();
 });

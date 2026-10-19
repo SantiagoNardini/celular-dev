@@ -18,7 +18,7 @@ try {
   opciones = parseArgs({
     options: {
       carpeta: { type: 'string' }, codigo: { type: 'string' }, puerto: { type: 'string' }, ruta: { type: 'string' },
-      manual: { type: 'boolean' }, todo: { type: 'boolean' }, 'sin-panel': { type: 'boolean' },
+      manual: { type: 'boolean' }, iniciar: { type: 'boolean' }, todo: { type: 'boolean' }, 'sin-panel': { type: 'boolean' },
       idioma: { type: 'string' }, celular: { type: 'string' }, ayuda: { type: 'boolean', short: 'h' }
     }
   }).values;

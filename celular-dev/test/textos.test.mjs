@@ -19,6 +19,7 @@ function archivos(carpeta) {
 const VARIABLES = {
   'modo.': ['vivo', 'manual', 'live-server'], 'resumen.recarga.': ['vivo', 'manual', 'live-server'],
   'red.': ['normal', 'lenta', 'sin-conexion'],
+  'proyecto.marco.': ['vite', 'next', 'nuxt', 'astro', 'sveltekit', 'cra', 'angular', 'generico'],
   'cond.esquema.': ['auto', 'oscuro', 'claro'], 'cond.animaciones.': ['normal', 'reducidas'], 'cond.contraste.': ['normal', 'alto'],
   'cond.vision.': ['ninguna', 'borrosa', 'protanopia', 'deuteranopia', 'tritanopia', 'acromatopsia'], 'cond.lugar.': ['real', 'buenos-aires', 'madrid', 'nueva-york', 'tokio'], 'red.filtro.': ['pesados', 'errores', 'todos'], 'accesos.listo.': ['win32', 'darwin', 'linux'], 'oferta.': ['win32', 'darwin', 'linux']
 };

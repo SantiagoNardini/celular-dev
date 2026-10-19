@@ -236,6 +236,31 @@ function soltadaHtml(e) {
     ${e.soltada.candidatas.map((c, i) => `<div class="fila-servidor" title="${esc(c.ruta)}"><span>${esc(rutaCorta(c.ruta))}</span><button class="chico" data-accion="usar-soltada" data-valor="${i}">${tr('inicio.usar')}</button></div>`).join('')}</section>`;
 }
 
+// La oferta de prender el servidor del proyecto, y el avance (o el error) mientras se prende. Nada arranca sin apretar el botón.
+function proyectoHtml(e) {
+  const a = e.arranque;
+  const salida = lineas => `<pre class="salida-servidor">${lineas.length ? lineas.map(esc).join('\n') : ''}</pre>`;
+  if (a && a.fase === 'iniciando') {
+    return `<section class="tarjeta proyecto"><div class="cabeza-proyecto"><span class="girando" role="img" aria-label="${tr('proyecto.prendiendo', { comando: a.texto })}"></span><div><h2>${tr('proyecto.prendiendo', { comando: a.texto })}</h2></div>
+      <button class="chico" data-accion="proyecto-cancelar">${tr('proyecto.cancelar')}</button></div>${salida(a.lineas)}</section>`;
+  }
+  if (a && a.fase === 'error') {
+    return `<section class="tarjeta proyecto mal"><h2>${tr('proyecto.errorTitulo')}</h2><p class="sub">${esc(a.error)}</p>${salida(a.lineas)}
+      <div class="botones"><button class="principal chico" data-accion="proyecto-iniciar" data-valor="una">${tr('proyecto.reintentar')}</button><button class="chico" data-accion="proyecto-cancelar">${tr('proyecto.cerrar')}</button></div></section>`;
+  }
+  const p = e.opciones.proyecto;
+  if (!p) return '';
+  return `<section class="tarjeta proyecto"><div class="icono">${ic('servidor')}</div><div class="cuerpo-proyecto">
+      <h2>${tr('proyecto.titulo', { marco: tr(`proyecto.marco.${p.marco}`) })}</h2>
+      <p class="sub">${tr('proyecto.texto', { comando: `<code>${esc(p.texto)}</code>` }).replace(/&lt;code&gt;(.*?)&lt;\/code&gt;/g, '<code>$1</code>')}</p>
+      ${p.faltaInstalar ? `<p class="aviso-inspector">${ic('alerta')}${tr('proyecto.faltaInstalar')}</p>` : ''}
+      ${p.recordado ? `<p class="nota">${tr('proyecto.recordado')}</p>` : ''}
+      <div class="botones"><button class="principal" data-accion="proyecto-iniciar" data-valor="una">${ic('vivo')}${tr('proyecto.iniciar')}</button>
+        ${p.recordado ? '' : `<button data-accion="proyecto-iniciar" data-valor="siempre">${tr('proyecto.siempre')}</button>`}
+        <button class="fantasma" data-accion="proyecto-ocultar" data-valor="ahora">${tr('proyecto.ahoraNo')}</button>
+        <button class="fantasma" data-accion="proyecto-ocultar" data-valor="nunca">${tr('proyecto.nunca')}</button></div></div></section>`;
+}
+
 function vistaInicio() {
   const { carpeta, servidores, recientes } = estado.opciones;
   const usadas = recientes.length
@@ -251,6 +276,7 @@ function vistaInicio() {
     <h1>${tr('inicio.titulo')}</h1>
     <p class="sub">${tr('inicio.sub')}</p>
     ${soltadaHtml(estado)}
+    ${proyectoHtml(estado)}
     <div class="opciones">
       <section class="tarjeta opcion ${servidores.length ? '' : 'destacada'}">
         <div class="icono">${ic('carpeta')}</div>

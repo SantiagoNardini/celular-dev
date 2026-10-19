@@ -24,6 +24,8 @@ import { espejoInicial, mirarEspejo, alCuadro } from './espejo.mjs';
 import { mostrarResumen } from './teclas.mjs';
 import { mantenerDespierto, devolverPantalla } from './despierto.mjs';
 import { RegistroPedidos } from './pedidos.mjs';
+import { apagarServidorPropio } from './arranque.mjs';
+import { detectarProyecto, iniciarProyecto } from '../proyecto.mjs';
 import { versionActual, buscarVersionPublicada, revisarNovedad } from './novedad.mjs';
 
 const espera = ms => new Promise(r => setTimeout(r, ms));
@@ -44,7 +46,7 @@ export function crearApp({ opciones = {}, cwd = process.cwd(), deps = {}, tiempo
     deps: {
       buscarAdb, crearAdb: ruta => new Adb(ruta), crearChrome: puerto => new Chrome(puerto), iniciarPanel, abrirNavegador,
       abrirConElSistema, elegirCarpeta, descargarAdb, hayAccesos, terminar: codigo => process.exit(codigo),
-      buscarVersion: buscarVersionPublicada,
+      buscarVersion: buscarVersionPublicada, detectarProyecto, iniciarProyecto,
       buscarCarpeta, raicesBusqueda: () => raicesDeBusqueda(leerConfig().recientes.map(r => dirname(r))),
       servidores: { conocidos: PUERTOS_CONOCIDOS, puertoAbierto, detectar },
       ...deps
@@ -55,7 +57,7 @@ export function crearApp({ opciones = {}, cwd = process.cwd(), deps = {}, tiempo
     pedidos: new RegistroPedidos(),
     relojes: {},
     adb: null, chrome: null, traductor: null, panel: null, sitio: null, puertoDevtools: 0, ultimaCarga: 0, pantallaReal: null,
-    dejarDeVigilar: null, alElegirSitio: null, rearmando: null, conectando: null
+    dejarDeVigilar: null, alElegirSitio: null, rearmando: null, conectando: null, arrancando: null, servidorPropio: null, lineasServidor: []
   };
   // la primera vez, el panel le muestra qué hacer con el espejo
   estado.version = versionActual(carpetaHerramienta);
@@ -179,6 +181,8 @@ async function salir(app, codigo) {
   if (app.alElegirSitio) app.alElegirSitio(null);
   for (const c of app.espejo.clientes.keys()) c.end();
   if (app.chrome) app.chrome.cerrar();
+  // el servidor que prendió celular-dev se apaga con él (el que ya estaba prendido de antes no se toca)
+  await apagarServidorPropio(app).catch(() => {});
   if (adb) {
     await devolverPantalla(app);
     adb.cerrar();
