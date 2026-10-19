@@ -102,3 +102,15 @@ test('el tamaño de la página en el celular sale de la parte visible, redondead
   assert.deepEqual(await chrome.medidasPantalla(), { ancho: 411, alto: 773 });
 });
 
+
+test('el tema se manda a Chrome como dark / light (y vacío para el del celular); las demás condiciones, con sus valores de Chrome', async () => {
+  const chrome = new Chrome(1);
+  let enviado;
+  chrome.enviar = async (metodo, params) => { enviado = [metodo, params]; };
+  const valores = async condiciones => { await chrome.medios(condiciones); return Object.fromEntries(enviado[1].features.map(f => [f.name, f.value])); };
+  assert.equal(enviado, undefined);
+  assert.deepEqual(await valores({ esquema: 'oscuro', animaciones: 'reducidas', contraste: 'alto' }), { 'prefers-color-scheme': 'dark', 'prefers-reduced-motion': 'reduce', 'prefers-contrast': 'more' });
+  assert.equal((await valores({ esquema: 'claro' }))['prefers-color-scheme'], 'light');
+  assert.deepEqual(await valores({ esquema: 'auto', animaciones: 'normal', contraste: 'normal' }), { 'prefers-color-scheme': '', 'prefers-reduced-motion': '', 'prefers-contrast': '' });
+  assert.equal(enviado[0], 'Emulation.setEmulatedMedia');
+});

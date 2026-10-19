@@ -173,7 +173,7 @@ export class Chrome extends EventEmitter {
   // Cómo se ve la página según los ajustes del sistema: tema, animaciones y contraste. 'auto' / 'normal': los del celular.
   medios({ esquema = 'auto', animaciones = 'normal', contraste = 'normal' } = {}) {
     return this.enviar('Emulation.setEmulatedMedia', { features: [
-      { name: 'prefers-color-scheme', value: esquema === 'auto' ? '' : esquema },
+      { name: 'prefers-color-scheme', value: esquema === 'oscuro' ? 'dark' : esquema === 'claro' ? 'light' : '' },
       { name: 'prefers-reduced-motion', value: animaciones === 'reducidas' ? 'reduce' : '' },
       { name: 'prefers-contrast', value: contraste === 'alto' ? 'more' : '' }
     ] });

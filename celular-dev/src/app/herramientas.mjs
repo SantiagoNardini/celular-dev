@@ -29,10 +29,15 @@ export async function elegirCondicion(app, valor) {
 
 export async function reiniciarCondiciones(app) {
   const { estado } = app;
+  const eraLento = estado.lento;
   estado.condiciones = condicionesIniciales();
   estado.lento = false;
   try {
-    if (app.chrome.conectado) await aplicarCondiciones(app);
+    if (app.chrome.conectado) {
+      await aplicarCondiciones(app);
+      // la red lenta era parte del celular lento: se devuelve también (una red elegida a mano se respeta)
+      if (eraLento) { await app.chrome.red('normal'); estado.red = 'normal'; }
+    }
   } catch (error) {
     contar(app, 'error', t('condiciones.noSePudo', { detalle: error.message }));
   }

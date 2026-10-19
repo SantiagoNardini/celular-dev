@@ -291,6 +291,13 @@ test('celular lento: red 3G y procesador más lento de una vez; elegir otra red 
   p.chrome.perderPestana();
   await hasta(() => p.estado.consola === true, { que: 'reconectar la consola' });
   assert.equal(p.chrome.cpus.at(-1), 4);
+  // «Volver a todo normal» con el celular lento: devuelve también la red
+  await accion('condiciones-reiniciar');
+  assert.equal(p.estado.lento, false);
+  assert.equal(p.estado.red, 'normal');
+  assert.equal(p.chrome.redes.at(-1), 'normal');
+  assert.equal(p.chrome.cpus.at(-1), 1);
+  await accion('celular-lento');
   // otra red a mano: ya no es el celular lento
   await accion('red', 'normal');
   assert.equal(p.estado.lento, false);

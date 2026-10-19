@@ -35,7 +35,8 @@ export async function recargar(app, motivo = '') {
     await chrome.recargar();
     estado.recargas++;
     // el celular tiene que terminar de cargar: si no lo hace, se avisa
-    esperarCarga(app, app.tiempos.frescuraVivo);
+    // con red lenta o celular lento, cargar tarda mucho más: se espera más antes de avisar que no se actualizó
+    esperarCarga(app, app.tiempos.frescuraVivo * (estado.red !== 'normal' ? 4 : 1));
     contar(app, 'ok', t('accion.recargado', { motivo }));
     return { mensaje: t('accion.recargadoCorto') };
   } catch (error) {
