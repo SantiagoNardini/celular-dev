@@ -46,6 +46,7 @@ export function vigilarCodigo(app) {
     contar(app, 'aviso', t('sitio.sinCodigo'), [t('sitio.sinCodigoSolucion')]);
     return;
   }
+  const alFallar = error => contar(app, 'error', t('sitio.noPuedoVigilar', { detalle: error.message }), [t('sitio.noPuedoVigilarSolucion')]);
   app.dejarDeVigilar = vigilar(sitio.carpeta, archivos => {
     const nombres = archivos.length > 3 ? t('sitio.archivosYMas', { lista: archivos.slice(0, 3).join(', '), n: archivos.length - 3 }) : archivos.join(', ');
     if (estado.fase !== 'corriendo') return;
@@ -54,7 +55,7 @@ export function vigilarCodigo(app) {
     // Live Server recarga solo: acá solo se vigila que lo haya hecho. Si no, se recarga desde acá.
     if (estado.modo === 'live-server') esperarCargaSiCorresponde(app, archivos);
     else recargar(app);
-  });
+  }, undefined, alFallar);
 }
 
 // Mientras se muestra el inicio, cada 3 s se miran los puertos conocidos. Solo se le pide la página a un
@@ -141,6 +142,13 @@ export async function aplicarSitio(app, nuevo) {
   estado.avisos = [];
   estado.errores = 0;
   estado.revision = null;
+  estado.consolaLineas = [];
+  estado.inspeccion = null;
+  estado.datosSitio = null;
+  estado.desactualizado = null;
+  estado.celular.url = '';
+  app.pedidos.reiniciar();
+  estado.pedidos = app.pedidos.resumen('');
   app.traductor = new Traductor({ origen: sitio.origen, todo: true });
   if (anterior) {
     if (anterior.cerrarEstatico) anterior.cerrarEstatico();

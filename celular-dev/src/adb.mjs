@@ -47,7 +47,7 @@ export class Adb extends EventEmitter {
   // queda abierto en segundo plano y, si heredara la salida, nos quedaríamos esperando a que se cierre.
   async prender() {
     if (this.loIniciamos === undefined) {
-      this.loIniciamos = !(await puertoAbierto(5037));
+      this.loIniciamos = !(await puertoAbierto(+process.env.ANDROID_ADB_SERVER_PORT || 5037));
       // aunque el programa se cierre de golpe, el servicio que prendimos no queda abierto en el Administrador de tareas
       if (this.loIniciamos) process.once('exit', () => this.apagarServicio());
     }

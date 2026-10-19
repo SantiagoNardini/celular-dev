@@ -84,3 +84,10 @@ test('los cambios llegan por SSE', async () => {
   assert.match(await leer(), /"contador":5/);
   await lector.cancel();
 });
+
+test('acepta el cuerpo de una carpeta grande arrastrada (cientos de archivos)', async () => {
+  const archivos = Array.from({ length: 300 }, (_, i) => ({ nombre: `archivo-largo-numero-${i}.js`, tamano: i }));
+  const r = await pedir({ ruta: '/api/accion', metodo: 'POST', encabezados: { 'X-Celular': '1', 'Content-Type': 'application/json' }, cuerpo: JSON.stringify({ accion: 'soltar-carpeta', valor: { nombre: 'sitio', archivos, carpetas: [] } }) });
+  assert.equal(JSON.parse(r.datos).mensaje, "hecho");
+  assert.equal(acciones.at(-1)[1].archivos.length, 300);
+});

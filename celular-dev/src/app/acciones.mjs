@@ -8,7 +8,7 @@ import { revisar, evaluar } from '../revision.mjs';
 import { ubicar, abrirEnEditor } from '../editor.mjs';
 import { crearAccesos } from '../accesos.mjs';
 import { rutaParaMostrar as mostrar, recordarCodigo, guardarPreferencia } from '../lugares.mjs';
-import { abrirChromeInspect } from '../sistema.mjs';
+import { abrirChromeInspect, direccionSegura } from '../sistema.mjs';
 import { REDES, nombreRed, cambio, contar } from './estado.mjs';
 import { abrirEnCelular, conectarConsola, llevarSitioAlCelular } from './conexion.mjs';
 import { sitioDeServidor, sitioDeCarpeta, vigilarCodigo, elegirEnPanel, aplicarSitio, elegir } from './sitio.mjs';
@@ -332,7 +332,7 @@ export async function alAccion(app, accion, valor) {
       // la dirección sale del estado, no de lo que mande el panel: solo se abre lo que el celular tiene abierto
       const url = estado.celular.url;
       if (!url) return { error: t('accion.sinDireccion') };
-      if (!/^https?:\/\//i.test(url)) return { error: t('accion.direccionNoWeb') };
+      if (!direccionSegura(url)) return { error: t('accion.direccionNoWeb') };
       app.deps.abrirNavegador(url);
       return { mensaje: t('accion.abiertoEnPc', { url }) };
     }
@@ -364,7 +364,8 @@ export async function alAccion(app, accion, valor) {
     case 'ocultar-novedad': ocultarNovedad(app); return {};
     case 'abrir':
       if (estado.fase !== 'corriendo') return { error: t('accion.noListo') };
-      if (await abrirEnCelular(app)) await conectarConsola(app);
+      if (!(await abrirEnCelular(app))) return { error: t('arreglar.noAbre') };
+      if (!(await conectarConsola(app))) return { error: t('arreglar.sinPestana') };
       return { mensaje: t('accion.abiertoDeNuevo') };
     case 'limpiar':
       estado.avisos = []; estado.consolaLineas = []; estado.errores = 0; app.interno.impreso.clear(); cambio(app);

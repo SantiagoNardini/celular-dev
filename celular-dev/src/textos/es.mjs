@@ -191,6 +191,8 @@ Necesita el celular conectado por USB con la depuración USB activada, y Chrome 
   'accion.noCambioSitio': 'No pude cambiar el sitio: {detalle}',
   'accion.abiertoDeNuevo': 'Abierto de nuevo en el celular.',
   'accion.listaLimpia': 'Lista de errores limpia.',
+  'sitio.noPuedoVigilar': 'No pude vigilar tu código para recargar al guardar: {detalle}',
+  'sitio.noPuedoVigilarSolucion': 'Podés recargar a mano con el botón «Recargar» (o la tecla R). En Linux, puede ser el límite de archivos vigilados: probá con una carpeta de código más chica.',
   'condiciones.noExiste': 'Esa condición no existe.',
   'condiciones.noSePudo': 'No se pudo aplicar en el celular: {detalle}',
   'condiciones.noSePudoCorto': 'El celular no aceptó el cambio.',

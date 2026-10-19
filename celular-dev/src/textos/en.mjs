@@ -191,6 +191,8 @@ Needs the phone connected over USB with USB debugging turned on, and Chrome on t
   'accion.noCambioSitio': 'Could not change the site: {detalle}',
   'accion.abiertoDeNuevo': 'Opened on the phone again.',
   'accion.listaLimpia': 'Error list cleared.',
+  'sitio.noPuedoVigilar': 'I could not watch your code to reload on save: {detalle}',
+  'sitio.noPuedoVigilarSolucion': 'You can reload by hand with the “Reload” button (or the R key). On Linux it may be the limit of watched files: try a smaller code folder.',
   'condiciones.noExiste': 'That condition does not exist.',
   'condiciones.noSePudo': 'Could not apply it on the phone: {detalle}',
   'condiciones.noSePudoCorto': 'The phone did not accept the change.',

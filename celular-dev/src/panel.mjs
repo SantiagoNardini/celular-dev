@@ -49,7 +49,7 @@ export function iniciarPanel({ obtenerEstado, alAccion, obtenerTextos = () => ({
     if (pedido.method === 'POST' && ruta === '/api/accion') {
       if (pedido.headers['x-celular'] !== '1') return json(respuesta, 403, { error: 'No permitido.' });
       let cuerpo = '';
-      for await (const parte of pedido) { cuerpo += parte; if (cuerpo.length > 10000) break; }
+      for await (const parte of pedido) { cuerpo += parte; if (cuerpo.length > 300000) break; }
       try {
         const { accion, valor } = JSON.parse(cuerpo || '{}');
         return json(respuesta, 200, (await alAccion(accion, valor)) || {});

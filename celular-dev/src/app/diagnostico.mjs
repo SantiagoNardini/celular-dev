@@ -4,6 +4,8 @@
 import { release, homedir } from 'node:os';
 import { join } from 'node:path';
 
+// de una dirección solo se cuenta el sitio y la ruta: lo que va después del ? o # puede traer claves o datos de la persona
+const sinConsulta = url => { try { const u = new URL(url); return u.origin + u.pathname; } catch { return String(url || ''); } };
 const sinUsuario = texto => String(texto == null ? '' : texto).split(homedir()).join('~');
 
 export async function armarDiagnostico(app) {
@@ -38,12 +40,12 @@ export async function armarDiagnostico(app) {
   linea('Android', estado.celular.android);
   linea('Browser', estado.celular.navegador);
   linea('Viewport', estado.celular.pantalla);
-  linea('Open page', estado.celular.url);
+  linea('Open page', sinConsulta(estado.celular.url));
   linea('Steps', Object.entries(estado.pasos).map(([k, v]) => `${k}=${v}`).join(' '));
   L.push('');
 
   L.push('## Site');
-  linea('Site', estado.sitio ? `${estado.sitio.tipo} ${estado.sitio.url}` : 'not chosen');
+  linea('Site', estado.sitio ? `${estado.sitio.tipo} ${sinConsulta(estado.sitio.url)}` : 'not chosen');
   linea('Server up', estado.servidorOk);
   linea('Mode', estado.modo);
   linea('Network', estado.red);

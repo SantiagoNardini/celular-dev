@@ -6,10 +6,13 @@ import { sep } from 'node:path';
 // Carpetas y archivos que cambian solos o no forman parte de la página.
 const IGNORAR = /(^|[\\/])(node_modules|\.git|\.vscode|\.idea|\.netlify|\.vercel|\.next|\.cache|\.celular|dist|build|coverage)([\\/]|$)|~$|\.tmp(\.|$)|\.swp$|\.crswap$|\.log$/;
 
-export function vigilar(carpeta, alGuardar, espera = 300) {
+// alFallar(error): no se pudo vigilar (por ejemplo, ENOSPC en Linux por el límite de archivos vigilados, o la carpeta se borró).
+export function vigilar(carpeta, alGuardar, espera = 300, alFallar = () => {}) {
   let reloj = null;
   let cambiados = new Set();
-  const vigia = watch(carpeta, { recursive: true }, (_tipo, nombre) => {
+  let vigia;
+  try {
+    vigia = watch(carpeta, { recursive: true }, (_tipo, nombre) => {
     if (!nombre || IGNORAR.test(nombre)) return;
     cambiados.add(nombre.split(sep).join('/'));
     clearTimeout(reloj);
@@ -18,6 +21,11 @@ export function vigilar(carpeta, alGuardar, espera = 300) {
       cambiados = new Set();
       alGuardar(lista);
     }, espera);
-  });
+    });
+  } catch (error) {
+    alFallar(error);
+    return () => {};
+  }
+  vigia.on('error', error => { try { vigia.close(); } catch { /* ya cerrado */ } alFallar(error); });
   return () => { clearTimeout(reloj); vigia.close(); };
 }

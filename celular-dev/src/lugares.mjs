@@ -2,7 +2,7 @@
 // y qué recuerda entre una vez y otra: las carpetas usadas y dónde está el código de cada servidor.
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
 
 // Documentos\celular-dev: ahí van el registro, las capturas y los informes, fáciles de encontrar.
 // Si no hay carpeta Documentos (por ejemplo, la movió OneDrive), en la carpeta del usuario.
@@ -46,7 +46,12 @@ export function guardarPreferencia(clave, valor) {
 }
 
 function guardarConfig(config) {
-  try { writeFileSync(ARCHIVO(), JSON.stringify(config, null, 2)); } catch { /* si no se puede, la próxima vez no lo recuerda */ }
+  // se escribe en un archivo aparte y se lo renombra: un corte a mitad no deja el config.json cortado
+  try {
+    const temporal = `${ARCHIVO()}.${process.pid}.tmp`;
+    writeFileSync(temporal, JSON.stringify(config, null, 2));
+    renameSync(temporal, ARCHIVO());
+  } catch { /* si no se puede, la próxima vez no lo recuerda */ }
 }
 
 // Las últimas 5 carpetas usadas, la más reciente primero.

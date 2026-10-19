@@ -965,3 +965,26 @@ test('revisar el sitio, simular la red y sacar una captura', async () => {
   await p.app.salir(0);
   await p.terminado;
 });
+
+test('al cambiar de sitio no se arrastra lo del anterior (consola, red, elemento inspeccionado, datos), y el diagnóstico no lleva lo que va después del ? de la dirección', async () => {
+  const p = armar({ opciones: { carpeta: carpetaSitio } });
+  await arrancarHastaCorrer(p);
+  p.chrome.evento('Runtime.consoleAPICalled', { type: 'log', args: [{ type: 'string', value: 'del sitio anterior' }] });
+  p.chrome.evento('Network.requestWillBeSent', { requestId: '9', loaderId: '9', frameId: 'F', type: 'Document', timestamp: 1, request: { url: `${p.app.sitio.origen}/`, method: 'GET' } });
+  p.chrome.elemento = { selector: 'h1', etiqueta: 'h1', rect: { x: 0, y: 0, ancho: 10, alto: 10 }, pantalla: { ancho: 411, alto: 773 }, estilos: {}, atributos: [] };
+  await accion('inspeccionar', { x: 0.1, y: 0.1 });
+  await hasta(() => p.estado.pedidos.total === 1, { que: 'juntar el pedido' });
+  assert.ok(p.estado.consolaLineas.length && p.estado.inspeccion);
+  p.estado.celular.url = `${p.app.sitio.origen}/pagina?token=secreto123#clave`;
+  const { texto } = await accion('diagnostico');
+  assert.match(texto, /Open page: http:\/\/localhost:\d+\/pagina\n/);
+  assert.ok(!texto.includes('secreto123') && !texto.includes('clave'), 'el diagnóstico no tiene que llevar la consulta de la dirección');
+
+  assert.deepEqual(await accion('cambiar-sitio'), {});
+  await hasta(() => p.estado.fase === 'inicio', { que: 'volver al inicio' });
+  await accion('usar-reciente', '0');
+  await hasta(() => p.estado.fase === 'corriendo', { que: 'seguir con el sitio nuevo' });
+  assert.deepEqual([p.estado.consolaLineas.length, p.estado.pedidos.total, p.estado.inspeccion, p.estado.datosSitio], [0, 0, null, null]);
+  await p.app.salir(0);
+  await p.terminado;
+});

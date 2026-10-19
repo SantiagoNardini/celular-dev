@@ -17,9 +17,28 @@ function lanzar(programa, args, opciones = callado) {
   }
 }
 
+// Solo se abren direcciones http o https, normalizadas. Devuelve null si no lo es.
+export function direccionSegura(url) {
+  try {
+    const u = new URL(url);
+    return u.protocol === 'http:' || u.protocol === 'https:' ? u.href : null;
+  } catch {
+    return null;
+  }
+}
+
+// Qué programa abre una dirección. En Windows NO se usa «cmd /c start»: cmd entiende el & de una dirección como el
+// comienzo de otro comando (…?a=1&calc ejecutaría calc). rundll32 recibe la dirección tal cual, sin intérprete.
+export function comandoParaAbrirUrl(url, plataforma = process.platform) {
+  if (plataforma === 'win32') return ['rundll32.exe', ['url.dll,FileProtocolHandler', url]];
+  return [plataforma === 'darwin' ? 'open' : 'xdg-open', [url]];
+}
+
 export function abrirNavegador(url) {
-  if (process.platform === 'win32') lanzar('cmd', ['/c', 'start', '', url]);
-  else lanzar(process.platform === 'darwin' ? 'open' : 'xdg-open', [url]);
+  const segura = direccionSegura(url);
+  if (!segura) return;
+  const [programa, args] = comandoParaAbrirUrl(segura);
+  lanzar(programa, args);
 }
 
 export function abrirConElSistema(ruta) {

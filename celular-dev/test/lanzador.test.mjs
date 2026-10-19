@@ -67,3 +67,17 @@ test('celular-dev.sh no tiene errores de sintaxis', { skip: process.platform ===
   const r = spawnSync('sh', ['-n', sh]);
   assert.equal(r.status, 0, String(r.stderr));
 });
+
+import { comandoParaAbrirUrl, direccionSegura } from '../src/sistema.mjs';
+test('abrir una dirección en Windows no pasa por cmd.exe (un & en la dirección ejecutaría otro comando)', () => {
+  const url = 'http://localhost:5500/?a=1&calc.exe&x=2';
+  assert.deepEqual(comandoParaAbrirUrl(url, 'win32'), ['rundll32.exe', ['url.dll,FileProtocolHandler', url]]);
+  assert.deepEqual(comandoParaAbrirUrl(url, 'darwin'), ['open', [url]]);
+  assert.deepEqual(comandoParaAbrirUrl(url, 'linux'), ['xdg-open', [url]]);
+  // solo http y https
+  assert.equal(direccionSegura(url), url);
+  assert.equal(direccionSegura('file:///C:/Windows/System32/calc.exe'), null);
+  assert.equal(direccionSegura('javascript:alert(1)'), null);
+  assert.equal(direccionSegura('calc'), null);
+  assert.equal(direccionSegura('https://example.com/a b'), 'https://example.com/a%20b');
+});
