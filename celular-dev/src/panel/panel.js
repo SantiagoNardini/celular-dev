@@ -46,6 +46,9 @@ const ICONOS = {
   limpiar: '<path d="M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/>',
   apagar: '<path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><path d="M12 2v10"/>',
   compacto: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/>',
+  sol: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  luna: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+  chispa: '<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/>',
   campana: '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
   campanaNo: '<path d="M13.73 21a2 2 0 0 1-3.46 0M18.63 13A17.9 17.9 0 0 1 18 8M6.26 6.26A5.9 5.9 0 0 0 6 8c0 7-3 9-3 9h14M18 8a6 6 0 0 0-9.33-5"/><path d="m1 1 22 22"/>'
 };
@@ -125,6 +128,7 @@ document.addEventListener('click', e => {
   }
   if (boton && boton.dataset.accion === 'datos-limpiar' && !confirm(tr('datos.confirmar'))) return;
   if (boton && boton.dataset.accion === 'compacto') { alternarCompacto(); return; }
+  if (boton && boton.dataset.accion === 'tema') { alternarTema(); return; }
   if (boton && !boton.classList.contains('ocupado')) accion(boton.dataset.accion, boton.dataset.valor, boton);
 });
 document.addEventListener('toggle', e => { if (e.target.id === 'ayuda') ayudaAbierta = e.target.open; }, true);
@@ -155,6 +159,29 @@ function dibujarCabecera() {
   cerrar.title = tr('cabecera.cerrarTitulo');
   dibujarBotonAvisos();
   dibujarBotonCompacto();
+  dibujarBotonTema();
+}
+
+// ---------- Tema ----------
+// Oscuro por defecto; el botón de la cabecera cambia entre oscuro y claro y se recuerda en este navegador.
+const temaActual = () => document.documentElement.dataset.tema === 'claro' ? 'claro' : 'oscuro';
+function dibujarBotonTema() {
+  const boton = document.getElementById('tema');
+  boton.innerHTML = ic(temaActual() === 'oscuro' ? 'sol' : 'luna');
+  boton.title = tr('cabecera.temaTitulo');
+  boton.setAttribute('aria-label', tr('cabecera.tema'));
+}
+function alternarTema() {
+  const nuevo = temaActual() === 'oscuro' ? 'claro' : 'oscuro';
+  document.documentElement.dataset.tema = nuevo;
+  try { localStorage.setItem('tema', nuevo); } catch { /* sin almacenamiento: dura hasta recargar */ }
+  dibujarBotonTema();
+}
+
+// El estado general, para el halo del celular: error si hay un error de esta carga, aviso si solo hay avisos, si no ok.
+function estadoGeneral(s) {
+  const actuales = s.avisos.filter(a => a.ronda >= s.ronda);
+  return actuales.some(a => a.nivel === 'error') ? 'error' : actuales.length ? 'aviso' : 'ok';
 }
 
 // ---------- Vista compacta ----------
@@ -408,11 +435,11 @@ function vistaPanel() {
         return `<div class="item ${a.nivel}${vieja ? ' vieja' : ''}"><span class="punto" aria-hidden="true"></span><div class="cuerpo">
         <p class="simple">${marca}${conCodigo(a.simple)}</p>
         <p class="tecnico">${esc(a.texto)}${a.donde ? ' · ' + esc(a.donde) : ''} · ${esc(a.ultima)}</p>
-        <div class="enlaces">${a.abrible ? `<button class="enlace" data-accion="abrir-codigo" data-valor="${esc(a.id)}">${tr('panel.abrirEnEditor')}</button>` : ''}
-        <button class="enlace" data-accion="copiar-error" data-valor="${esc(a.id)}">${tr('errores.copiar')}</button></div></div>
+        <div class="enlaces"><button class="chico principal" data-accion="copiar-error" data-valor="${esc(a.id)}">${ic('chispa')}${tr('errores.arreglarIa')}</button>${a.abrible ? `<button class="enlace" data-accion="abrir-codigo" data-valor="${esc(a.id)}">${tr('panel.abrirEnEditor')}</button>` : ''}
+        </div></div>
         ${a.veces > 1 ? `<span class="veces">×${a.veces}</span>` : ''}</div>`;
       }).join('')
-    : `<p class="vacio">${ic('tilde')}${tr('panel.sinErrores')}</p>`;
+    : `<div class="todo-bien"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="18" y="6" width="28" height="52" rx="7"/><path d="M28 12h8"/><path d="M26 30h.01M38 30h.01" stroke-width="4"/><path d="M26 40c3 4 9 4 12 0"/></svg><b>${tr('panel.todoEnOrden')}</b><p>${tr('panel.sinErrores')}</p></div>`;
   const actividad = s.actividad.length
     ? s.actividad.map(a => `<div class="item ${a.nivel}"><span class="punto" aria-hidden="true"></span><div class="cuerpo"><p class="simple">${conCodigo(a.texto)}</p><p class="tecnico">${esc(a.hora)}</p></div></div>`).join('')
     : `<p class="vacio">${tr('panel.todaviaNada')}</p>`;
@@ -545,7 +572,7 @@ const ESQUELETOS = {
       <section class="tarjeta lista" data-zona="errores" aria-live="polite"></section>
       <section class="tarjeta lista" data-zona="consola"></section>
       <section class="tarjeta lista actividad" data-zona="actividad"></section>
-    </div><div>
+    </div><div class="columna-celular">
       <div class="telefono espejo"><div class="pantalla">
         <canvas id="espejo" tabindex="0" role="img"></canvas>
         <div id="resaltado" class="resaltado" hidden></div>
@@ -572,6 +599,7 @@ const dibujado = new Map();
 function dibujar() {
   if (!estado || !textos || cerrado) return;
   dibujarCabecera();
+  document.body.dataset.estado = estado.fase === 'corriendo' ? estadoGeneral(estado) : 'ok';
   const esqueleto = estado.fase === 'corriendo' ? 'corriendo' : 'otra';
   const zonas = estado.fase === 'corriendo' ? vistaPanel()
     : { principal: estado.fase === 'inicio' ? vistaInicio() : vistaAsistente() };

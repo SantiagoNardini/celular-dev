@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>celular-dev</title>
+<script>try { document.documentElement.dataset.tema = localStorage.getItem('tema') === 'claro' ? 'claro' : 'oscuro'; } catch { document.documentElement.dataset.tema = 'oscuro'; }</script>
 <link rel="stylesheet" href="/panel.css">
 <link rel="icon" type="image/svg+xml" href="/logo.svg">
 <link rel="icon" type="image/png" href="/icono.png">
@@ -14,6 +15,7 @@
   <span id="estado" class="pastilla" role="status">…</span>
   <button id="avisos" class="chico fantasma" data-accion="avisos" hidden></button>
   <button id="compacto" class="chico fantasma" data-accion="compacto"></button>
+  <button id="tema" class="chico fantasma" data-accion="tema"></button>
   <button id="idioma" class="chico" data-accion="idioma" data-valor="en">English</button>
   <button id="cerrar" class="chico" data-accion="salir"></button>
 </header>

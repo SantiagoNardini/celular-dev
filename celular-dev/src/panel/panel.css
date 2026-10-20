@@ -1,25 +1,26 @@
 /* Colores simples: grises, un solo acento (el verde de la marca) y rojo, ámbar y verde solo para estados. */
 :root {
   --fondo: #f6f6f4; --tarjeta: #ffffff; --suave: #f0f0ed; --borde: #e3e3df; --borde-fuerte: #cfcfca;
-  --texto: #1c1c1a; --texto-2: #5c5c57; --texto-3: #8b8b85;
+  --texto: #1c1c1a; --texto-2: #5c5c57; --texto-3: #6b6b65; --puntos: #e3e3de;
   --acento: #0f5c43; --acento-suave: #e8f0ec; --sobre-acento: #ffffff;
   --ok: #2e7d32; --alerta: #b26a00; --peligro: #c62828;
   --sombra: 0 1px 2px rgba(0, 0, 0, .04), 0 2px 8px rgba(0, 0, 0, .04);
   --radio: 10px;
 }
-@media (prefers-color-scheme: dark) {
-  :root { color-scheme: dark;
-    --fondo: #121212; --tarjeta: #1b1b1b; --suave: #242424; --borde: #2c2c2c; --borde-fuerte: #3d3d3d;
-    --texto: #ececec; --texto-2: #a8a8a8; --texto-3: #767676;
-    --acento: #8fd0b0; --acento-suave: #1d2b25; --sobre-acento: #0d1f18;
-    --ok: #81c784; --alerta: #ffb74d; --peligro: #ef9a9a;
-    --sombra: none;
-  }
-  /* que el marco del celular no se pierda contra el fondo oscuro */
-  .telefono { box-shadow: 0 0 0 1px #3a3a3a, 0 12px 32px rgba(0, 0, 0, .5); }
+/* El tema se elige con el botón de la cabecera (se recuerda) y arranca en oscuro: <html data-tema="oscuro|claro"> */
+:root[data-tema="claro"] { color-scheme: light; }
+:root[data-tema="oscuro"] {
+  color-scheme: dark;
+  --fondo: #0f1412; --tarjeta: #161d1a; --suave: #1e2723; --borde: #2b3833; --borde-fuerte: #3a4a44; --puntos: #1d2723;
+  --texto: #e9efec; --texto-2: #a3b0aa; --texto-3: #7f8c86;
+  --acento: #5fd3a0; --acento-suave: #17302a; --sobre-acento: #08140f;
+  --ok: #6fdc8c; --alerta: #f0b35a; --peligro: #ff8a80;
+  --sombra: none;
 }
+/* que el marco del celular no se pierda contra el fondo oscuro */
+:root[data-tema="oscuro"] .telefono { box-shadow: 0 0 0 1px #3a4a44, 0 12px 32px rgba(0, 0, 0, .5); }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--fondo); color: var(--texto); font: 0.875rem/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+body { margin: 0; background-color: var(--fondo); background-image: radial-gradient(var(--puntos) 1px, transparent 1.3px); background-size: 22px 22px; color: var(--texto); font: 0.875rem/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
 code { font: 0.78125rem ui-monospace, "Cascadia Code", Consolas, monospace; background: var(--suave); padding: 1px 5px; border-radius: 4px; }
 h1 { font-size: 1.5rem; font-weight: 600; letter-spacing: -.01em; margin: 0 0 4px; }
 h2 { font-size: 0.875rem; font-weight: 600; margin: 0; }
@@ -376,3 +377,33 @@ body.compacto [data-zona="herramientas"] { display: none; }
 .salida-servidor.grande { max-height: 320px; }
 
 .marca .version { margin-left: 8px; font-size: 0.75rem; font-weight: 500; color: var(--texto-3); }
+
+/* El celular con un halo que cambia con el estado: verde si todo está bien, ámbar con avisos, rojo con errores */
+body { --halo: var(--ok); overflow-x: clip; }   /* el halo se sale de la columna: que no cree barra horizontal */
+body[data-estado="aviso"] { --halo: var(--alerta); }
+body[data-estado="error"] { --halo: var(--peligro); }
+.columna-celular { position: relative; }
+.columna-celular::before { content: ""; position: absolute; left: 50%; top: 4%; width: min(560px, 130%); aspect-ratio: 1; transform: translateX(-50%); border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, color-mix(in srgb, var(--halo) 30%, transparent) 0, transparent 68%); animation: respirar 4s ease-in-out infinite; }
+.columna-celular > * { position: relative; }
+body.compacto .columna-celular::before { display: none; }
+@keyframes respirar { 0%, 100% { opacity: .75; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .columna-celular::before { animation: none; } }
+
+/* Errores y avisos: barra de gravedad a la izquierda y un círculo con signo */
+[data-zona="errores"] .item.error, [data-zona="errores"] .item.aviso { border-left: 4px solid var(--peligro); padding-left: 14px; }
+[data-zona="errores"] .item.aviso { border-left-color: var(--alerta); }
+[data-zona="errores"] .item.error .punto, [data-zona="errores"] .item.aviso .punto { width: 22px; height: 22px; margin-top: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--peligro) 18%, transparent); }
+[data-zona="errores"] .item.aviso .punto { background: color-mix(in srgb, var(--alerta) 18%, transparent); }
+[data-zona="errores"] .item .punto::after { content: "!"; font-weight: 700; font-size: 0.75rem; line-height: 1; color: var(--peligro); }
+[data-zona="errores"] .item.aviso .punto::after { color: var(--alerta); }
+[data-zona="errores"] .item .simple { font-weight: 600; }
+.item .enlaces { align-items: center; margin-top: 8px; }
+.item .enlaces .enlace { margin-top: 0; }
+.item .enlaces button.principal { font-weight: 600; }
+
+/* Sin errores */
+.todo-bien { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 22px 12px 10px; border-top: 1px solid var(--borde); }
+.todo-bien svg { width: 64px; height: 64px; stroke: var(--acento); fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.todo-bien b { font-size: 1.125rem; }
+.todo-bien p { color: var(--texto-2); max-width: 32ch; }
