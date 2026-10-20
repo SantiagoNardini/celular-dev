@@ -10,15 +10,16 @@
 /* El tema se elige con el botón de la cabecera (se recuerda) y arranca en oscuro: <html data-tema="oscuro|claro"> */
 :root[data-tema="claro"] { color-scheme: light; }
 :root[data-tema="oscuro"] {
+  /* Inspirado en Gruvbox, con los contrastes ajustados: todo el texto pasa AA y el acento y los avisos, AAA */
   color-scheme: dark;
-  --fondo: #0f1412; --tarjeta: #161d1a; --suave: #1e2723; --borde: #2b3833; --borde-fuerte: #3a4a44; --puntos: #1d2723;
-  --texto: #e9efec; --texto-2: #a3b0aa; --texto-3: #7f8c86;
-  --acento: #5fd3a0; --acento-suave: #17302a; --sobre-acento: #08140f;
-  --ok: #6fdc8c; --alerta: #f0b35a; --peligro: #ff8a80;
+  --fondo: #1d2021; --tarjeta: #282828; --suave: #32302f; --borde: #504945; --borde-fuerte: #7c6f64; --puntos: #2a2d2d;
+  --texto: #ebdbb2; --texto-2: #bdae93; --texto-3: #a89984;
+  --acento: #8ec07c; --acento-suave: #26331f; --sobre-acento: #14200f;
+  --ok: #b8bb26; --alerta: #fabd2f; --peligro: #ff6b5a;
   --sombra: none;
 }
 /* que el marco del celular no se pierda contra el fondo oscuro */
-:root[data-tema="oscuro"] .telefono { box-shadow: 0 0 0 1px #3a4a44, 0 12px 32px rgba(0, 0, 0, .5); }
+:root[data-tema="oscuro"] .telefono { box-shadow: 0 0 0 1px #504945, 0 12px 32px rgba(0, 0, 0, .5); }
 * { box-sizing: border-box; }
 body { margin: 0; background-color: var(--fondo); background-image: radial-gradient(var(--puntos) 1px, transparent 1.3px); background-size: 22px 22px; color: var(--texto); font: 0.875rem/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
 code { font: 0.78125rem ui-monospace, "Cascadia Code", Consolas, monospace; background: var(--suave); padding: 1px 5px; border-radius: 4px; }
