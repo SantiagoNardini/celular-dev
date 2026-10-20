@@ -97,7 +97,7 @@ Some choices that made it work well:
 
 ## Status and roadmap
 
-Works today on the test phone (Motorola moto g24 power, Android 14) and is covered by automated tests on three operating systems. It has been tried on one real phone so far, so **reports from other phones are very welcome** — use *Copy diagnostics* in the panel and open an issue.
+Tested on two real phones: a Motorola moto g24 power (Android 14) and a Samsung Galaxy A51 (Android 13, One UI 5.1). The mirror, touch, errors and console work the same on both. It is also covered by automated tests on three operating systems. Not tried yet with two phones connected at once on real hardware, and not on iPhone (not supported). **Reports from other phones are very welcome** — use *Copy diagnostics* in the panel and open an issue.
 
 Next: connecting over Wi-Fi (no cable), a VS Code extension, recording the phone screen, and device buttons (rotate, volume, home).
 

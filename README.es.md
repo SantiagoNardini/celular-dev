@@ -97,7 +97,7 @@ Algunas decisiones que lo hacen andar bien:
 
 ## Estado y próximos pasos
 
-Hoy funciona en el celular de prueba (Motorola moto g24 power, Android 14) y está cubierto por pruebas automáticas en tres sistemas operativos. Por ahora se probó en un solo celular real, así que **los reportes de otros celulares son muy bienvenidos**: usá *Copiar diagnóstico* en el panel y abrí un issue.
+Probado en dos celulares reales: un Motorola moto g24 power (Android 14) y un Samsung Galaxy A51 (Android 13, One UI 5.1). El espejo, el toque, los errores y la consola andan igual en los dos. También está cubierto por pruebas automáticas en tres sistemas operativos. Todavía no se probó con dos celulares conectados a la vez en equipos reales, ni con iPhone (no es compatible). **Los reportes de otros celulares son muy bienvenidos**: usá *Copiar diagnóstico* en el panel y abrí un issue.
 
 Lo que sigue: conexión por Wi-Fi (sin cable), una extensión para VS Code, grabar la pantalla del celular y botones del dispositivo (girar, volumen, inicio).
 
