@@ -739,6 +739,11 @@ test('con Live Server y la carpeta del código conocida, vigila que el celular s
   await arrancarHastaCorrer(p);
   assert.equal(p.estado.modo, 'live-server');
   const espera = ms => new Promise(r => setTimeout(r, ms));
+  // en Mac, el vigía repite al empezar lo recién escrito (el index.html de arriba) y eso pasa por un guardado: se deja
+  // asentar y se da por cargado el celular, para medir solo lo que hace la prueba
+  await espera(400);
+  p.chrome.evento('Page.loadEventFired', {});
+  assert.equal(p.estado.desactualizado, null);
   // solo estilos: Live Server no recarga la página, no hay nada que esperar
   writeFileSync(join(carpeta, 'estilo.css'), 'a{}');
   await espera(700);
