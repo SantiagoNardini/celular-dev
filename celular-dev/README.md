@@ -2,7 +2,7 @@
 
 Probá tu sitio en tu **celular Android real** mientras programás en la computadora (Windows, Mac o Linux), sin saber de servidores ni puertos:
 
-- **Elegís qué mostrar** desde un panel en el navegador: una carpeta con tu sitio (no hace falta ningún servidor) o el servidor que ya tengas prendido (Live Server, Vite, `npm run dev`…).
+- **Elegís qué mostrar** desde un panel que se abre en su propia ventana (Chrome o Edge, sin barra de pestañas; si no hay, en el navegador): una carpeta con tu sitio (no hace falta ningún servidor) o el servidor que ya tengas prendido (Live Server, Vite, `npm run dev`…).
 - Lo abre en el Chrome del celular, por cable USB, y lo **recarga solo cada vez que guardás** (o cuando vos quieras).
 - **Ves la pantalla del celular en vivo en el panel, y la usás desde ahí**: tocar, arrastrar, la rueda del mouse y el teclado llegan al celular.
 - Te muestra **los errores del celular explicados en lenguaje simple**, agrupados, con el detalle técnico y el archivo y la línea (y un botón para abrirlo en el editor).
@@ -78,6 +78,7 @@ Para tener el comando `celular` en cualquier carpeta, una vez dentro de `celular
 | `--ruta <ruta>` | Carpeta del sitio dentro del servidor, por ejemplo `/dist/` (Live Server se detecta solo) |
 | `--manual` | Arranca en modo manual: no recarga al guardar |
 | `--todo` | Muestra también `console.log` e `info`, no solo errores y avisos |
+| `--navegador` | Abre el panel como pestaña del navegador, en vez de en su propia ventana |
 | `--sin-panel` | Solo terminal: elige solo (tu servidor si hay uno; si no, esta carpeta) |
 | `--idioma <es\|en>` | Idioma del panel y los mensajes. Si no se pasa: el elegido en el panel; si nunca se eligió, inglés |
 

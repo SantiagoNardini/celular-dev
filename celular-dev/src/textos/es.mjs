@@ -18,6 +18,7 @@ Las capturas, los informes y el registro quedan en Documentos/celular-dev.
   --iniciar         prender el servidor de tu proyecto (el script dev, start o serve de package.json) y mostrarlo; se apaga al cerrar
   --manual          no recargar el celular al guardar: recargás vos (tecla R, botón del panel o el celular)
   --todo            mostrar también console.log e info del celular, no solo errores y avisos
+  --navegador       abrir el panel como pestaña del navegador, en vez de en su propia ventana
   --sin-panel       solo terminal: no abre el panel (elige solo: tu servidor si hay uno, si no esta carpeta)
   --celular <serie> con varios celulares conectados: cuál usar (ver «adb devices»)
   --idioma <es|en>  idioma del panel y los mensajes (si no, el que elegiste en el panel; si nunca elegiste, inglés)
@@ -55,6 +56,7 @@ Necesita el celular conectado por USB con la depuración USB activada, y Chrome 
   'arranque.otraCopia': 'Ya hay otra copia de celular-dev abierta.',
   'arranque.otraCopiaSolucion': 'Te abro su panel. Si querés empezar de nuevo, cerrá esa ventana primero.',
   'arranque.panelAbierto': 'Panel abierto en el navegador: {url}',
+  'arranque.ventanaAbierta': 'Panel abierto en su ventana (al cerrarla se cierra celular-dev): {url}',
   'arranque.panelEn': 'Panel en {url}',
   'arranque.sinAdb': 'No encontré ADB en esta computadora.',
   'arranque.sinAdbSolucion': 'Bajalo con el botón «Descargar ADB» del panel (es de Google, no hace falta instalar nada).',

@@ -10,7 +10,7 @@ import { Chrome } from '../chrome.mjs';
 import { detectar, puertoAbierto, PUERTOS_CONOCIDOS } from '../servidor.mjs';
 import { elegirCarpeta } from '../carpeta.mjs';
 import { iniciarPanel, PUERTO_PANEL } from '../panel.mjs';
-import { abrirNavegador, abrirConElSistema } from '../sistema.mjs';
+import { abrirNavegador, abrirConElSistema, abrirVentana } from '../sistema.mjs';
 import { descargarAdb } from '../instalar-adb.mjs';
 import { hayAccesos } from '../accesos.mjs';
 import { carpetaDatos, preferencia, leerConfig } from '../lugares.mjs';
@@ -44,7 +44,7 @@ export function crearApp({ opciones = {}, cwd = process.cwd(), deps = {}, tiempo
     esProyecto,
     carpetaPropia: carpetaDatos(),
     deps: {
-      buscarAdb, crearAdb: ruta => new Adb(ruta), crearChrome: puerto => new Chrome(puerto), iniciarPanel, abrirNavegador,
+      buscarAdb, crearAdb: ruta => new Adb(ruta), crearChrome: puerto => new Chrome(puerto), iniciarPanel, abrirNavegador, abrirVentana,
       abrirConElSistema, elegirCarpeta, descargarAdb, hayAccesos, terminar: codigo => process.exit(codigo),
       buscarVersion: buscarVersionPublicada, detectarProyecto, iniciarProyecto,
       buscarCarpeta, raicesBusqueda: () => raicesDeBusqueda(leerConfig().recientes.map(r => dirname(r))),
@@ -57,7 +57,7 @@ export function crearApp({ opciones = {}, cwd = process.cwd(), deps = {}, tiempo
     pedidos: new RegistroPedidos(),
     relojes: {},
     adb: null, chrome: null, traductor: null, panel: null, sitio: null, puertoDevtools: 0, ultimaCarga: 0, pantallaReal: null,
-    dejarDeVigilar: null, alElegirSitio: null, rearmando: null, conectando: null, arrancando: null, servidorPropio: null, lineasServidor: []
+    ventana: null, dejarDeVigilar: null, alElegirSitio: null, rearmando: null, conectando: null, arrancando: null, servidorPropio: null, lineasServidor: []
   };
   // la primera vez, el panel le muestra qué hacer con el espejo
   estado.version = versionActual(carpetaHerramienta);
@@ -86,7 +86,7 @@ async function arrancar(app) {
     return deps.terminar(1);
   }
   // CELULAR_NO_ABRIR=1: el panel funciona igual, pero no se abre solo (para pruebas automáticas)
-  if (conPanel && !process.env.CELULAR_NO_ABRIR) { deps.abrirNavegador(app.panel.url); ui.info(t('arranque.panelAbierto', { url: app.panel.url })); }
+  if (conPanel && !process.env.CELULAR_NO_ABRIR) abrirPanel(app);
   else if (conPanel) ui.info(t('arranque.panelEn', { url: app.panel.url }));
   // la primera vez, el panel ofrece crear los accesos directos (si todavía no están)
   if (conPanel && !preferencia('accesosOfrecidos')) {
@@ -172,6 +172,22 @@ async function arrancar(app) {
   ui.anotar('OK', `Corriendo: ${app.sitio.url}, ${estado.celular.modelo}, modo ${estado.modo}`);
 }
 
+// El panel se abre en su propia ventana (Chrome o Edge en modo aplicación): cerrarla cierra celular-dev. Si no hay
+// con qué, o con --navegador, se abre como pestaña del navegador de siempre.
+function abrirPanel(app) {
+  const { deps, ui } = app;
+  const url = app.panel.url;
+  const enNavegador = () => { deps.abrirNavegador(url); ui.info(t('arranque.panelAbierto', { url })); };
+  if (app.opciones.navegador) return enNavegador();
+  app.ventana = deps.abrirVentana(url, join(app.carpetaPropia, 'ventana'), abierta => {
+    if (app.interno.cerrando) return;
+    if (abierta) return app.salir(0);
+    app.ventana = null;
+    enNavegador();
+  });
+  if (app.ventana) ui.info(t('arranque.ventanaAbierta', { url })); else enNavegador();
+}
+
 async function salir(app, codigo) {
   const { interno, adb, sitio, ui, estado } = app;
   if (interno.cerrando) return;
@@ -191,6 +207,7 @@ async function salir(app, codigo) {
     if (sitio && !sitio.reverseYaEstaba) await adb.quitarReverse(sitio.puerto);
   }
   if (sitio && sitio.cerrarEstatico) sitio.cerrarEstatico();
+  if (app.ventana) app.ventana.cerrar();
   if (app.panel) app.panel.cerrar();
   if (process.stdin.isTTY) process.stdin.setRawMode(false);
   const minutos = Math.round((Date.now() - interno.inicio) / 60000);

@@ -1240,3 +1240,26 @@ test('si el servidor que prendió celular-dev se cierra solo se avisa, y «Apaga
   await q.app.salir(0); await q.terminado;
   servidor.close();
 });
+
+test('el panel se abre en su ventana y cerrarla cierra celular-dev; si no hay ventana, en el navegador', async () => {
+  delete process.env.CELULAR_NO_ABRIR;
+  try {
+    let alCerrar; const navegador = [];
+    const p = armar({ opciones: { carpeta: carpetaSitio }, deps: { abrirNavegador: u => navegador.push(u), abrirVentana: (url, perfil, cb) => { alCerrar = cb; return { cerrar() {} }; } } });
+    await arrancarHastaCorrer(p);
+    assert.ok(p.app.ventana);
+    assert.deepEqual(navegador, []);
+    alCerrar(true);   // la persona cerró la ventana
+    assert.equal(await p.terminado, 0);
+
+    const q = armar({ opciones: { carpeta: carpetaSitio }, deps: { abrirNavegador: u => navegador.push(u), abrirVentana: () => null } });
+    await arrancarHastaCorrer(q);
+    assert.equal(navegador.length, 1);   // sin Chrome ni Edge: pestaña común
+    await q.app.salir(0); await q.terminado;
+
+    const r = armar({ opciones: { carpeta: carpetaSitio, navegador: true }, deps: { abrirNavegador: u => navegador.push(u), abrirVentana: () => { throw new Error('no debía abrir ventana'); } } });
+    await arrancarHastaCorrer(r);
+    assert.equal(navegador.length, 2);   // con --navegador, siempre pestaña
+    await r.app.salir(0); await r.terminado;
+  } finally { process.env.CELULAR_NO_ABRIR = '1'; }
+});

@@ -108,3 +108,31 @@ test('--version (y -v) dice la versión del package.json, y el cartel y el panel
   assert.equal(t('arranque.cartel', { version: '' }), 'celular-dev: tu sitio en tu celular Android');
   assert.match(readFileSync(join(raiz, 'celular-dev', 'src', 'panel', 'index.html'), 'utf8'), /celular-dev<span id="version" class="version">/);
 });
+
+import { EventEmitter } from 'node:events';
+import { posiblesNavegadoresDeVentana, buscarNavegadorDeVentana, argumentosDeVentana, abrirVentana } from '../src/sistema.mjs';
+test('la ventana propia usa Chrome o Edge, con perfil aparte, y no abre direcciones que no sean web', () => {
+  const env = { ProgramFiles: 'C:\PF', LOCALAPPDATA: 'C:\L' };
+  const win = posiblesNavegadoresDeVentana('win32', env);
+  assert.ok(win.some(r => /chrome\.exe$/.test(r)) && win.some(r => /msedge\.exe$/.test(r)));
+  assert.equal(buscarNavegadorDeVentana('win32', env, r => /msedge\.exe$/.test(r)), win.find(r => /msedge\.exe$/.test(r)));
+  assert.equal(buscarNavegadorDeVentana('linux', {}, () => false), null);
+  assert.ok(posiblesNavegadoresDeVentana('darwin').every(r => r.startsWith('/Applications/')));
+  const args = argumentosDeVentana('http://localhost:47823/', '/datos/ventana');
+  assert.ok(args.includes('--app=http://localhost:47823/') && args.includes('--user-data-dir=/datos/ventana'));
+  assert.equal(abrirVentana('file:///C:/calc.exe', '/p', () => {}, { programa: 'x' }), null);
+  assert.equal(abrirVentana('http://localhost:1/', '/p', () => {}, { programa: null }), null);
+});
+
+test('cerrar la ventana avisa; si se cierra de golpe no cuenta como ventana propia; cerrarla desde acá no avisa', async () => {
+  const falso = () => Object.assign(new EventEmitter(), { kill() { this.emit('exit'); } });
+  const avisos = [];
+  const h1 = falso();
+  abrirVentana('http://localhost:1/', '/p', v => avisos.push(v), { programa: 'x', lanzarProceso: () => h1 });
+  h1.emit('exit');
+  assert.deepEqual(avisos, [false]);   // al instante: otro programa se hizo cargo del pedido
+  const h2 = falso();
+  const v2 = abrirVentana('http://localhost:1/', '/p', v => avisos.push(v), { programa: 'x', lanzarProceso: () => h2 });
+  v2.cerrar();
+  assert.deepEqual(avisos, [false]);
+});

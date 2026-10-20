@@ -18,6 +18,7 @@ Screenshots, reports and the log are saved in Documents/celular-dev.
   --iniciar         start your project’s server (the dev, start or serve script in package.json) and show it; it stops when you close
   --manual          don't reload the phone on save: you reload (R key, panel button or the phone)
   --todo            also show console.log and info from the phone, not just errors and warnings
+  --navegador       open the panel as a browser tab instead of its own window
   --sin-panel       terminal only: no panel (picks on its own: your server if there is one, else this folder)
   --celular <serial> with several phones connected: which one to use (see “adb devices”)
   --idioma <es|en>  language for the panel and messages (otherwise the one chosen in the panel; English if never chosen)
@@ -54,6 +55,7 @@ Needs the phone connected over USB with USB debugging turned on, and Chrome on t
   'resumen.version': 'Version',
   'arranque.otraCopia': 'Another copy of celular-dev is already open.',
   'arranque.otraCopiaSolucion': 'Opening its panel. To start over, close that window first.',
+  'arranque.ventanaAbierta': 'Panel open in its own window (closing it closes celular-dev): {url}',
   'arranque.panelAbierto': 'Panel open in your browser: {url}',
   'arranque.panelEn': 'Panel at {url}',
   'arranque.sinAdb': 'ADB was not found on this computer.',
