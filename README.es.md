@@ -45,6 +45,21 @@ npx github:SantiagoNardini/celular-dev
 
 En el celular hace falta la **depuración USB** activada (el panel te guía paso a paso, con animaciones) y **Google Chrome**. ADB se descarga solo con un clic si no lo tenés.
 
+### Verificar la descarga
+
+Cada paquete trae su archivo `.sha256` y una **atestación de GitHub** que prueba que salió de este repositorio y de su flujo de publicación (no está firmado con certificado de pago).
+
+```powershell
+Get-FileHash ./celular-dev-vX.Y.Z-windows.zip -Algorithm SHA256   # debe coincidir con el .sha256
+```
+
+```bash
+shasum -a 256 celular-dev-vX.Y.Z-mac-arm.zip                      # Mac y Linux
+gh attestation verify celular-dev-vX.Y.Z-windows.zip --repo SantiagoNardini/celular-dev
+```
+
+**Como no tiene firma de código**, Windows puede mostrar «Windows protegió tu PC» la primera vez: tocá **Más información** y después **Ejecutar de todas formas**. En Mac: clic derecho > Abrir.
+
 **Desde tu proyecto** (prende su servidor de desarrollo y lo apaga al cerrar):
 
 ```bash

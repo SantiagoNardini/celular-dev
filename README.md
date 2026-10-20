@@ -45,6 +45,21 @@ npx github:SantiagoNardini/celular-dev
 
 On the phone you need **USB debugging** turned on (the panel walks you through it, step by step, with animations) and **Google Chrome**. ADB downloads itself with one click if you don't have it.
 
+### Verify the download
+
+Each package ships with its `.sha256` file and a **GitHub attestation** proving it was built from this repository by its release workflow (it is not signed with a paid certificate).
+
+```powershell
+Get-FileHash ./celular-dev-vX.Y.Z-windows.zip -Algorithm SHA256   # must match the .sha256
+```
+
+```bash
+shasum -a 256 celular-dev-vX.Y.Z-mac-arm.zip                      # Mac and Linux
+gh attestation verify celular-dev-vX.Y.Z-windows.zip --repo SantiagoNardini/celular-dev
+```
+
+**Because there is no code-signing certificate**, Windows may show "Windows protected your PC" the first time: click **More info**, then **Run anyway**. On Mac: right-click > Open.
+
 **From inside your project** (starts its dev server for you, and stops it when you close):
 
 ```bash
