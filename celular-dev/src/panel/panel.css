@@ -10,10 +10,10 @@
 /* El tema se elige con el botón de la cabecera (se recuerda) y arranca en oscuro: <html data-tema="oscuro|claro"> */
 :root[data-tema="claro"] { color-scheme: light; }
 :root[data-tema="oscuro"] {
-  /* Inspirado en Gruvbox, con los contrastes ajustados: todo el texto pasa AA y el acento y los avisos, AAA */
+  /* Inspirado en Gruvbox, con los contrastes ajustados: el texto es blanco y gris claro (7 o más de contraste), y el acento y los avisos también pasan AAA */
   color-scheme: dark;
   --fondo: #1d2021; --tarjeta: #282828; --suave: #32302f; --borde: #504945; --borde-fuerte: #7c6f64; --puntos: #2a2d2d;
-  --texto: #ebdbb2; --texto-2: #bdae93; --texto-3: #a89984;
+  --texto: #ffffff; --texto-2: #dcdcd8; --texto-3: #bcbcb7;
   --acento: #8ec07c; --acento-suave: #26331f; --sobre-acento: #14200f;
   --ok: #b8bb26; --alerta: #fabd2f; --peligro: #ff6b5a;
   --sombra: none;
