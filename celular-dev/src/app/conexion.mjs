@@ -77,10 +77,34 @@ async function conectarConsolaAhora(app, intentos) {
   return false;
 }
 
+// El túnel del cable llega a la PC por IPv4. Si el servidor del sitio solo escucha en IPv6 (Vite en Windows, por
+// ejemplo), responde en «localhost» pero no en 127.0.0.1: se abre un puente por IPv4 y el túnel apunta a él.
+export async function armarTunel(app) {
+  const { sitio, adb, deps } = app;
+  let destino = sitio.puerto;
+  if (sitio.tipo !== 'carpeta' && !(await deps.alcanzablePorIpv4(sitio.puerto)) && await deps.servidores.puertoAbierto(sitio.puerto)) {
+    try {
+      if (!app.puente || app.puente.sitio !== sitio.puerto) {
+        cerrarPuente(app);
+        app.puente = { ...(await deps.crearPuente(sitio.puerto)), sitio: sitio.puerto };
+        contar(app, 'info', t('celular.puenteIpv6', { puerto: sitio.puerto }));
+      }
+      destino = app.puente.puerto;
+    } catch (error) {
+      app.ui.anotar('INFO', `Puente IPv4: ${error.message}`);
+    }
+  } else cerrarPuente(app);
+  return adb.reverse(sitio.puerto, destino);
+}
+
+export function cerrarPuente(app) {
+  if (app.puente) { app.puente.cerrar(); app.puente = null; }
+}
+
 // Túnel del puerto del sitio, pestaña abierta y consola conectada.
 export async function llevarSitioAlCelular(app) {
   const { sitio, chrome } = app;
-  sitio.reverseYaEstaba = await app.adb.reverse(sitio.puerto);
+  sitio.reverseYaEstaba = await armarTunel(app);
   if (!(await chrome.buscar(sitio.origen))) await abrirEnCelular(app);
   else app.ui.info(t('celular.yaEstabaAbierto'));
   if (await conectarConsola(app)) contar(app, 'ok', t('celular.abierto'));
@@ -115,7 +139,7 @@ async function rearmarAhora(app) {
   const { adb, chrome, sitio } = app;
   try {
     // el túnel se perdió con la desconexión: se vuelve a armar, sin olvidar si era de otro programa
-    await adb.reverse(sitio.puerto);
+    await armarTunel(app);
     await mantenerDespierto(app);
     const anterior = app.puertoDevtools;
     app.puertoDevtools = await adb.forwardChrome();

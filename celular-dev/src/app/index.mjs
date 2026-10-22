@@ -11,6 +11,7 @@ import { detectar, puertoAbierto, PUERTOS_CONOCIDOS } from '../servidor.mjs';
 import { elegirCarpeta } from '../carpeta.mjs';
 import { iniciarPanel, PUERTO_PANEL } from '../panel.mjs';
 import { abrirNavegador, abrirConElSistema, abrirVentana } from '../sistema.mjs';
+import { alcanzablePorIpv4, crearPuente } from '../puente.mjs';
 import { descargarAdb } from '../instalar-adb.mjs';
 import { hayAccesos } from '../accesos.mjs';
 import { carpetaDatos, preferencia, leerConfig } from '../lugares.mjs';
@@ -18,7 +19,7 @@ import { buscarCarpeta, raicesDeBusqueda } from '../buscar-carpeta.mjs';
 import { t, textosPanel } from '../idioma.mjs';
 import { estadoInicial, cambio, contar } from './estado.mjs';
 import { obtenerSitio, aplicarSitio } from './sitio.mjs';
-import { llevarSitioAlCelular, datosDelCelular, escucharAdb, escucharChrome, explicarCelular } from './conexion.mjs';
+import { llevarSitioAlCelular, datosDelCelular, escucharAdb, escucharChrome, explicarCelular, cerrarPuente } from './conexion.mjs';
 import { recargar, alAccion } from './acciones.mjs';
 import { espejoInicial, mirarEspejo, alCuadro } from './espejo.mjs';
 import { mostrarResumen } from './teclas.mjs';
@@ -44,7 +45,7 @@ export function crearApp({ opciones = {}, cwd = process.cwd(), deps = {}, tiempo
     esProyecto,
     carpetaPropia: carpetaDatos(),
     deps: {
-      buscarAdb, crearAdb: ruta => new Adb(ruta), crearChrome: puerto => new Chrome(puerto), iniciarPanel, abrirNavegador, abrirVentana,
+      buscarAdb, crearAdb: ruta => new Adb(ruta), crearChrome: puerto => new Chrome(puerto), iniciarPanel, abrirNavegador, abrirVentana, alcanzablePorIpv4, crearPuente,
       abrirConElSistema, elegirCarpeta, descargarAdb, hayAccesos, terminar: codigo => process.exit(codigo),
       buscarVersion: buscarVersionPublicada, detectarProyecto, iniciarProyecto,
       buscarCarpeta, raicesBusqueda: () => raicesDeBusqueda(leerConfig().recientes.map(r => dirname(r))),
@@ -57,7 +58,7 @@ export function crearApp({ opciones = {}, cwd = process.cwd(), deps = {}, tiempo
     pedidos: new RegistroPedidos(),
     relojes: {},
     adb: null, chrome: null, traductor: null, panel: null, sitio: null, puertoDevtools: 0, ultimaCarga: 0, pantallaReal: null,
-    ventana: null, dejarDeVigilar: null, alElegirSitio: null, rearmando: null, conectando: null, arrancando: null, servidorPropio: null, lineasServidor: []
+    ventana: null, puente: null, dejarDeVigilar: null, alElegirSitio: null, rearmando: null, conectando: null, arrancando: null, servidorPropio: null, lineasServidor: []
   };
   // la primera vez, el panel le muestra qué hacer con el espejo
   estado.version = versionActual(carpetaHerramienta);
@@ -208,6 +209,7 @@ async function salir(app, codigo) {
   }
   if (sitio && sitio.cerrarEstatico) sitio.cerrarEstatico();
   if (app.ventana) app.ventana.cerrar();
+  cerrarPuente(app);
   if (app.panel) app.panel.cerrar();
   if (process.stdin.isTTY) process.stdin.setRawMode(false);
   const minutos = Math.round((Date.now() - interno.inicio) / 60000);

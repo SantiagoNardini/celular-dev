@@ -8,6 +8,7 @@ import { Traductor } from '../consola.mjs';
 import { leerConfig, recordarCarpeta, codigoRecordado, rutaParaMostrar } from '../lugares.mjs';
 import { cambio, contar } from './estado.mjs';
 import { recargar } from './acciones.mjs';
+import { cerrarPuente } from './conexion.mjs';
 import { marcarManual, esperarCargaSiCorresponde } from './frescura.mjs';
 import { sugerencia, iniciarSiCorresponde } from './arranque.mjs';
 
@@ -159,6 +160,7 @@ export async function aplicarSitio(app, nuevo) {
   estado.pedidos = app.pedidos.resumen('');
   app.traductor = new Traductor({ origen: sitio.origen, todo: true });
   if (anterior) {
+    cerrarPuente(app);
     if (anterior.cerrarEstatico) anterior.cerrarEstatico();
     if (app.adb && !anterior.reverseYaEstaba && anterior.puerto !== sitio.puerto) await app.adb.quitarReverse(anterior.puerto);
   }

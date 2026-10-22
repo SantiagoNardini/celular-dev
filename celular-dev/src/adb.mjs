@@ -86,12 +86,12 @@ export class Adb extends EventEmitter {
 
   // ---------- Túneles ----------
 
-  // Hace que el localhost:puerto del celular llegue al de la PC. Devuelve si ya existía antes, para
-  // no borrarlo al salir si era de otro programa.
-  async reverse(puerto) {
+  // Hace que el localhost:puerto del celular llegue al de la PC (o a otro puerto de la PC: el del puente de IPv6).
+  // Devuelve si ya existía antes, para no borrarlo al salir si era de otro programa.
+  async reverse(puerto, destino = puerto) {
     const lista = await this.ejecutar(['reverse', '--list']);
-    const yaEstaba = new RegExp(`tcp:${puerto}\\s+tcp:${puerto}`).test(lista.salida);
-    const r = await this.ejecutar(['reverse', `tcp:${puerto}`, `tcp:${puerto}`]);
+    const yaEstaba = new RegExp(`tcp:${puerto}\\s+tcp:${destino}(\\s|$)`).test(lista.salida);
+    const r = await this.ejecutar(['reverse', `tcp:${puerto}`, `tcp:${destino}`]);
     if (r.codigo !== 0) throw new Error(t('adb.sinReverse', { puerto, detalle: r.salida }));
     return yaEstaba;
   }

@@ -333,6 +333,7 @@ Necesita el celular conectado por USB con la depuración USB activada, y Chrome 
   'explicar.httpOtro': 'El pedido de `{archivo}` devolvió un error {estado}.',
   'explicar.redBloqueado': 'El navegador bloqueó `{archivo}` por seguridad ({motivo}).',
   'explicar.redSinConexion': 'No se pudo conectar para pedir `{archivo}`: el servidor no responde o la dirección está mal ({motivo}).',
+  'celular.puenteIpv6': 'Tu servidor (puerto {puerto}) escucha solo en IPv6 y el cable llega por IPv4: lo conecto con un puente, no hace falta que cambies nada.',
   'explicar.redOtro': 'No se pudo cargar `{archivo}` ({motivo}).',
   'explicar.csp': 'La seguridad de la página (CSP) bloqueó algo que se quiso cargar o ejecutar.',
   'explicar.mixto': 'La página es segura (https) pero quiso cargar algo inseguro (http), y el navegador lo bloqueó.',

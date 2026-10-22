@@ -40,9 +40,10 @@ export class AdbSimulado extends EventEmitter {
     return { codigo: 0, salida: '' };
   }
 
-  async reverse(puerto) {
+  async reverse(puerto, destino = puerto) {
     const yaEstaba = this.reverses.has(puerto);
     this.reverses.add(puerto);
+    (this.destinos ??= new Map()).set(puerto, destino);
     return yaEstaba;
   }
 

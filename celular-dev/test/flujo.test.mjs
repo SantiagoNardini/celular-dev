@@ -1268,3 +1268,36 @@ test('el panel se abre en su ventana y cerrarla cierra celular-dev; si no hay ve
     await r.app.salir(0); await r.terminado;
   } finally { process.env.CELULAR_NO_ABRIR = '1'; }
 });
+
+test('si tu servidor solo escucha en IPv6, el túnel del celular apunta a un puente y se cierra al salir', async () => {
+  const servidor = createServer((_, r) => r.end('<!doctype html><title>x</title>'));
+  await new Promise(r => servidor.listen(0, '127.0.0.1', r));
+  const puerto = servidor.address().port;
+  let cerrado = false;
+  const p = armar({ opciones: { puerto: String(puerto) }, deps: {
+    alcanzablePorIpv4: async () => false,   // como Vite en Windows: solo responde en localhost
+    crearPuente: async () => ({ puerto: 45678, cerrar: () => { cerrado = true; } }),
+    servidores: { conocidos: [], puertoAbierto, detectar }
+  } });
+  await arrancarHastaCorrer(p);
+  assert.equal(p.adb.destinos.get(puerto), 45678, 'el túnel apunta al puente');
+  assert.ok(p.estado.actividad.some(a => /IPv6/.test(a.texto)), 'se le cuenta a la persona');
+  await p.app.salir(0);
+  await p.terminado;
+  assert.equal(cerrado, true, 'el puente se cierra al salir');
+  servidor.close(); servidor.closeAllConnections();
+});
+
+test('si tu servidor responde por IPv4, el túnel va directo y no se arma ningún puente', async () => {
+  const servidor = createServer((_, r) => r.end('<!doctype html><title>x</title>'));
+  await new Promise(r => servidor.listen(0, '127.0.0.1', r));
+  const puerto = servidor.address().port;
+  let creado = false;
+  const p = armar({ opciones: { puerto: String(puerto) }, deps: { crearPuente: async () => { creado = true; return { puerto: 1, cerrar() {} }; }, servidores: { conocidos: [], puertoAbierto, detectar } } });
+  await arrancarHastaCorrer(p);
+  assert.equal(p.adb.destinos.get(puerto), puerto);
+  assert.equal(creado, false);
+  await p.app.salir(0);
+  await p.terminado;
+  servidor.close(); servidor.closeAllConnections();
+});
