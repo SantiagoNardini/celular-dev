@@ -20,7 +20,7 @@ Probá tu sitio en tu **celular Android real** mientras programás en la computa
 - **Inspector:** el botón de la mira junto al espejo, y después tocás un elemento: selector, tamaño, colores, letra, espaciado, aviso si es muy chico para tocarlo y «Copiar para la IA».
 - **Red:** todos los pedidos de la página con peso y tiempo, lo que más pesa (con consejos), lo que falla, y copiar como `curl`.
 - **Datos del sitio:** almacenamiento local, de sesión, cookies, service workers, caché e IndexedDB; borrar uno, o **Empezar de cero** (solo de ese sitio) y recargar.
-- **Versión a la vista:** al lado del nombre en el panel (`celular-dev v0.7.0`), en el cartel de la terminal y con `celular-dev --version` (o `-v`).
+- **Versión a la vista:** al lado del nombre en el panel (`celular-dev v0.8.0`), en el cartel de la terminal y con `celular-dev --version` (o `-v`).
 - **Servidores que solo escuchan en IPv6** (Vite en Windows con Node 17 o más nuevo, por ejemplo): el cable llega a la PC por IPv4 y el celular veía `ERR_EMPTY_RESPONSE`. celular-dev lo detecta y abre un puente por IPv4 hacia tu servidor, sin que cambies nada en tu proyecto; se cierra al salir.
 - **Se recupera solo cuando Chrome del celular suelta la pestaña** (se cerró, se colgó o se reemplazó): si la conexión queda abierta pero muerta, el espejo se congela y nada responde. Ahora celular-dev lo nota (por el aviso de Chrome, al recargar o al pedir la imagen), vuelve a conectar y sigue. Tampoco recarga el celular por lo que escriben las pruebas (Playwright), los cachés de los servidores (`.svelte-kit`, `.nuxt`, `.turbo`…) ni los archivos temporales de `sed -i`.
 - **Tema oscuro (por defecto) o claro:** el botón de sol o luna de la cabecera cambia entre los dos y se recuerda. El celular tiene un halo que cambia con el estado (verde, ámbar o rojo), cada error trae su botón «Arreglar con IA» (copia el problema listo para pegar en tu IA) y, sin errores, el panel dice «Todo en orden».
@@ -148,8 +148,8 @@ Arma los paquetes de Windows, Mac (chip Apple e Intel) y Linux en `../paquete`, 
 Para publicar una versión en GitHub: cambiá `version` en `package.json`, subí el cambio y después la etiqueta. GitHub corre las pruebas, arma los paquetes y los publica en Releases (`.github/workflows/version.yml`):
 
 ```bash
-git tag v0.7.0
-git push origin v0.7.0
+git tag v0.8.0
+git push origin v0.8.0
 ```
 
 `.gitattributes` y `.editorconfig` (al lado de esta carpeta) hacen que git y los editores guarden siempre `celular-dev.bat` con saltos de línea de Windows, y `celular-dev.sh` y `celular-dev.command` con los de Linux: al revés, el doble clic falla.

@@ -1,6 +1,6 @@
 {
   "name": "celular-dev",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "See your site on a real Android phone from your PC over USB: live reload, a live touchable mirror, and the phone's errors explained in plain language. No dependencies.",
   "type": "module",
   "bin": {
