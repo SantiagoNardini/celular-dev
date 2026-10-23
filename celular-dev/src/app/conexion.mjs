@@ -154,6 +154,21 @@ async function rearmarAhora(app) {
   }
 }
 
+// La conexión con la pestaña quedó muerta (sigue abierta, pero Chrome ya no la atiende): se suelta y se vuelve a
+// conectar. Al conectar de nuevo, el espejo se reanuda solo.
+export async function recuperarConexion(app) {
+  const { estado, chrome } = app;
+  if (app.interno.cerrando || estado.pasos.celular !== 'ok') return false;
+  chrome.cerrar();
+  estado.consola = false;
+  estado.espejo = false;
+  app.espejo.activo = false;
+  cambio(app);
+  if (await conectarConsola(app, 6)) return true;
+  reintentarConsola(app);
+  return false;
+}
+
 export function reintentarConsola(app) {
   clearInterval(app.relojes.reconexion);
   app.relojes.reconexion = setInterval(async () => {
@@ -181,6 +196,11 @@ export function escucharChrome(app, alCuadro) {
     } else if (metodo === 'Page.navigatedWithinDocument') recordarPagina(app, params.url);
     const aviso = app.traductor.traducir(metodo, params);
     if (aviso && aviso.tipo === 'carga') { alCargar(app); return; }   // el celular terminó de cargar la página
+    if (metodo === 'Inspector.detached' || metodo === 'Inspector.targetCrashed') {
+      contar(app, 'aviso', t('celular.pestanaDesenganchada'));
+      recuperarConexion(app);
+      return;
+    }
     if (!aviso) return;
     // console.log e info van a la consola del panel; en la lista de errores solo con --todo
     if (aviso.nivel === 'log') { registrarConsola(app, aviso); if (!app.opciones.todo) return; }

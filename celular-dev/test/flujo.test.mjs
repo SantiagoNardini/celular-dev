@@ -1301,3 +1301,73 @@ test('si tu servidor responde por IPv4, el túnel va directo y no se arma ningú
   await p.terminado;
   servidor.close(); servidor.closeAllConnections();
 });
+
+test('el espejo sigue andando después de desconectar y volver a conectar el celular (con el panel mirando todo el tiempo)', async () => {
+  const p = armar({ opciones: { carpeta: carpetaSitio } });
+  await arrancarHastaCorrer(p);
+  const recibido = [];
+  const pedido = request(`${PANEL}/api/espejo.mjpg`, { headers: { Host: `localhost:${process.env.CELULAR_PUERTO_PANEL}` } });
+  const respuesta = await new Promise((resolver, rechazar) => { pedido.on('response', resolver); pedido.on('error', rechazar); pedido.end(); });
+  respuesta.on('data', d => recibido.push(d));
+  await hasta(() => p.chrome.espejo, { que: 'pedir cuadros' });
+  const antes = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 0xff, 0xd9]);
+  p.chrome.cuadro(antes);
+  await hasta(() => Buffer.concat(recibido).includes(antes), { que: 'el primer cuadro' });
+
+  // se desconecta el cable y vuelve (el panel sigue mirando: no suelta el flujo)
+  p.adb.cambiar('sin-celular');
+  await hasta(() => !p.chrome.conectado, { que: 'perder la consola' });
+  p.chrome.espejo = false;   // la conexión nueva con Chrome arranca sin el pedido de cuadros
+  p.adb.cambiar('device');
+  await hasta(() => /Celular reconectado, con su consola/.test(actividad(p.estado)), { que: 'reconectar' });
+  await hasta(() => p.chrome.espejo, { que: 'volver a pedir cuadros después de reconectar' });
+
+  const despues = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 9, 8, 7, 0xff, 0xd9]);
+  p.chrome.cuadro(despues);
+  await hasta(() => Buffer.concat(recibido).includes(despues), { que: 'el cuadro de después de reconectar' });
+  respuesta.destroy();
+  await p.app.salir(0);
+  await p.terminado;
+});
+
+test('si Chrome del celular ya no atiende la pestaña (conexión zombi), recargar reconecta y prueba de nuevo, y el espejo vuelve', async () => {
+  const p = armar({ opciones: { carpeta: carpetaSitio } });
+  await arrancarHastaCorrer(p);
+  const conexionesAntes = p.chrome.conexiones;
+  p.chrome.sinAdjuntar = true;
+  const r = await accion('recargar');
+  assert.ok(!r.error, 'después de reconectar, recarga');
+  assert.equal(p.chrome.conexiones, conexionesAntes + 1, 'se volvió a conectar');
+  assert.ok(p.chrome.conectado);
+  assert.equal(p.chrome.recargas >= 1, true);
+  assert.match(actividad(p.estado), /conexión con la pestaña del celular estaba muerta/);
+  await p.app.salir(0);
+  await p.terminado;
+});
+
+test('si la pestaña se desengancha o se cuelga (Inspector.detached), celular-dev se reconecta solo', async () => {
+  const p = armar({ opciones: { carpeta: carpetaSitio } });
+  await arrancarHastaCorrer(p);
+  const conexionesAntes = p.chrome.conexiones;
+  p.chrome.evento('Inspector.detached', { reason: 'target_closed' });
+  await hasta(() => p.chrome.conexiones === conexionesAntes + 1 && p.estado.consola === true, { que: 'reconectar la pestaña' });
+  await p.app.salir(0);
+  await p.terminado;
+});
+
+test('el espejo congelado por una conexión muerta se recupera: la captura nítida falla con «Not attached» y se reconecta', async () => {
+  const p = armar({ opciones: { carpeta: carpetaSitio } });
+  await arrancarHastaCorrer(p);
+  const pedido = request(`${PANEL}/api/espejo.mjpg`, { headers: { Host: `localhost:${process.env.CELULAR_PUERTO_PANEL}` } });
+  const respuesta = await new Promise((resolver, rechazar) => { pedido.on('response', resolver); pedido.on('error', rechazar); pedido.end(); });
+  respuesta.resume();
+  await hasta(() => p.chrome.espejo, { que: 'pedir cuadros' });
+  const conexionesAntes = p.chrome.conexiones;
+  p.chrome.nitidaMuerta = true;
+  p.chrome.cuadro(Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 0xff, 0xd9]));   // al quedar quieta, intenta la captura nítida y falla
+  await hasta(() => p.chrome.conexiones === conexionesAntes + 1, { que: 'reconectar después de la captura fallida' });
+  p.chrome.nitidaMuerta = false;
+  respuesta.destroy();
+  await p.app.salir(0);
+  await p.terminado;
+});

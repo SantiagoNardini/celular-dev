@@ -14,6 +14,10 @@ export const PERFILES_RED = {
 // códigos de teclado de las teclas que se pueden mandar desde el espejo
 const TECLAS = { Backspace: 8, Tab: 9, Enter: 13, Escape: 27, Delete: 46, ArrowLeft: 37, ArrowUp: 38, ArrowRight: 39, ArrowDown: 40 };
 
+// La conexión con la pestaña sigue abierta pero Chrome ya no la atiende (la pestaña se cerró, se descartó o se
+// reemplazó): no llega ninguna imagen y nada responde. Hay que volver a conectarse.
+export const esConexionMuerta = error => /Not attached to an active page|No target with given id|Target closed|Session with given id not found/i.test(error && error.message ? error.message : String(error));
+
 export class Chrome extends EventEmitter {
   constructor(puertoDevtools) {
     super();
@@ -59,6 +63,8 @@ export class Chrome extends EventEmitter {
       this.emit('cerrada');
     });
     for (const dominio of ['Runtime.enable', 'Log.enable', 'Network.enable', 'Page.enable']) await this.enviar(dominio);
+    // para enterarse si la pestaña se desengancha o se cuelga (Inspector.detached, Inspector.targetCrashed); sin esto no pasa nada
+    await this.enviar('Inspector.enable').catch(() => {});
   }
 
   recibir(m) {

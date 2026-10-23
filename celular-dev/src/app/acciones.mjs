@@ -10,7 +10,8 @@ import { crearAccesos } from '../accesos.mjs';
 import { rutaParaMostrar as mostrar, recordarCodigo, guardarPreferencia } from '../lugares.mjs';
 import { abrirChromeInspect, direccionSegura } from '../sistema.mjs';
 import { REDES, nombreRed, cambio, contar } from './estado.mjs';
-import { abrirEnCelular, conectarConsola, llevarSitioAlCelular } from './conexion.mjs';
+import { abrirEnCelular, conectarConsola, llevarSitioAlCelular, recuperarConexion } from './conexion.mjs';
+import { esConexionMuerta } from '../chrome.mjs';
 import { sitioDeServidor, sitioDeCarpeta, vigilarCodigo, elegirEnPanel, aplicarSitio, elegir } from './sitio.mjs';
 import { tocar, marcarPrimerExito, olvidarImagen, reanudarEspejo } from './espejo.mjs';
 import { esperarCarga } from './frescura.mjs';
@@ -23,7 +24,7 @@ import { elegirCondicion, reiniciarCondiciones, celularLento, inspeccionar, cerr
 
 const sello = (ui, d) => `${ui.fecha(d)}_${ui.hora(d).replace(/:/g, '-')}`;
 
-export async function recargar(app, motivo = '') {
+export async function recargar(app, motivo = '', yaReconecto = false) {
   const { estado, chrome } = app;
   if (estado.fase !== 'corriendo') return { error: t('accion.noListoRecargar') };
   if (!estado.servidorOk) { contar(app, 'aviso', t('accion.noRecargoServidor')); return { error: t('accion.servidorApagado') }; }
@@ -41,6 +42,11 @@ export async function recargar(app, motivo = '') {
     contar(app, 'ok', t('accion.recargado', { motivo }));
     return { mensaje: t('accion.recargadoCorto') };
   } catch (error) {
+    // la conexión con la pestaña quedó muerta: se vuelve a conectar y se prueba otra vez (una sola)
+    if (!yaReconecto && esConexionMuerta(error)) {
+      contar(app, 'aviso', t('accion.reconectoPestana'));
+      if (await recuperarConexion(app)) return recargar(app, motivo, true);
+    }
     contar(app, 'error', t('accion.noRecargo', { detalle: error.message }));
     return { error: t('accion.noRecargoCorto') };
   }

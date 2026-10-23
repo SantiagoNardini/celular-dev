@@ -4,7 +4,7 @@ import { watch, existsSync } from 'node:fs';
 import { sep } from 'node:path';
 
 // Carpetas y archivos que cambian solos o no forman parte de la página.
-const IGNORAR = /(^|[\\/])(node_modules|\.git|\.vscode|\.idea|\.netlify|\.vercel|\.next|\.cache|\.celular|dist|build|coverage)([\\/]|$)|~$|\.tmp(\.|$)|\.swp$|\.crswap$|\.log$/;
+const IGNORAR = /(^|[\\/])(node_modules|\.git|\.vscode|\.idea|\.netlify|\.vercel|\.next|\.nuxt|\.svelte-kit|\.astro|\.angular|\.turbo|\.parcel-cache|\.output|\.cache|\.celular|dist|build|coverage|test-results|playwright-report|blob-report|\.playwright[^\\/]*)([\\/]|$)|(^|[\\/])sed[A-Za-z0-9]{6}([\\/]|$)|~$|\.tmp(\.|$)|\.swp$|\.crswap$|\.crdownload$|\.log$|\.last-run\.json$/;
 
 // alFallar(error): no se pudo vigilar (por ejemplo, ENOSPC en Linux por el límite de archivos vigilados, o la carpeta se borró).
 export function vigilar(carpeta, alGuardar, espera = 300, alFallar = () => {}) {

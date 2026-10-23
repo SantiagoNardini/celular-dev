@@ -333,6 +333,8 @@ Needs the phone connected over USB with USB debugging turned on, and Chrome on t
   'explicar.httpOtro': 'The request for `{archivo}` returned an error {estado}.',
   'explicar.redBloqueado': 'The browser blocked `{archivo}` for security reasons ({motivo}).',
   'explicar.redSinConexion': 'Could not connect to get `{archivo}`: the server is not responding or the address is wrong ({motivo}).',
+  'celular.pestanaDesenganchada': 'Chrome on the phone let go of the tab (it closed, hung or was replaced): reconnecting.',
+  'accion.reconectoPestana': 'The connection with the phone tab was dead: reconnecting and trying again.',
   'celular.puenteIpv6': 'Your server (port {puerto}) only listens on IPv6 and the cable reaches it over IPv4: I connect it with a bridge, you do not need to change anything.',
   'explicar.redOtro': 'Could not load `{archivo}` ({motivo}).',
   'explicar.csp': 'The page\'s security policy (CSP) blocked something from loading or running.',

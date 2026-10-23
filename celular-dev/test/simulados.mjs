@@ -117,6 +117,7 @@ export class ChromeSimulado extends EventEmitter {
 
   async recargar() {
     if (!this.conectado) throw new Error('no hay conexión con la pestaña del celular');
+    if (this.sinAdjuntar) { this.sinAdjuntar = false; throw new Error('Not attached to an active page'); }   // la conexión sigue abierta pero Chrome ya no la atiende
     this.recargas++;
     // como el de verdad: al terminar de cargar avisa (con sinCarga = true, es la pantalla apagada o la pestaña trabada)
     if (!this.sinCarga) setTimeout(() => this.emit('evento', 'Page.loadEventFired', {}), 5);
@@ -132,6 +133,7 @@ export class ChromeSimulado extends EventEmitter {
   async captura() { return Buffer.from('89504e470d0a1a0a', 'hex'); }
   async capturaNitida() {
     this.nitidas = (this.nitidas || 0) + 1;
+    if (this.nitidaMuerta) throw new Error('Not attached to an active page');
     if (this.demoraNitida) await new Promise(r => setTimeout(r, this.demoraNitida));
     return Buffer.from([0xff, 0xd8, 0xaa, 0xff, 0xd9]);
   }

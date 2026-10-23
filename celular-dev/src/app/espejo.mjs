@@ -8,6 +8,8 @@
 import { cambio } from './estado.mjs';
 import { guardarPreferencia } from '../lugares.mjs';
 import { tamanoDe } from './tamanos.mjs';
+import { esConexionMuerta } from '../chrome.mjs';
+import { recuperarConexion } from './conexion.mjs';
 
 const LIMITE = '--cuadro';
 
@@ -162,7 +164,10 @@ async function afinar(app) {
       for (const c of espejo.clientes.keys()) escribirCuadro(c, nitida);
       if (!app.estado.espejo) { app.estado.espejo = true; cambio(app); }
     }
-  } catch { /* sin imagen nítida se sigue con la liviana */ } finally {
+  } catch (error) {
+    // sin imagen nítida se sigue con la liviana; pero si la conexión está muerta, el espejo se congela: se reconecta
+    if (esConexionMuerta(error)) recuperarConexion(app);
+  } finally {
     espejo.refinando = false;
     if (espejo.version !== version) programarNitido(app);
   }
